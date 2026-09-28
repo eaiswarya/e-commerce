@@ -20,3 +20,9 @@ library:
   loan:
     period-days: 14
     max-active: 5
+  jwt:
+    expiry: 8h
+  admin:
+    username: ${ADMIN_USERNAME:admin}
+    password: ${ADMIN_PASSWORD:}
+    full-name: Administrator
