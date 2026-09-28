@@ -47,6 +47,9 @@ npm run dev          # local dev server
 - Errors handled centrally in a `@RestControllerAdvice`; return consistent error JSON.
 - `@Transactional` on service methods that write; keep it out of controllers.
 - Config via `application.yml` + environment variables; no secrets in the repo.
+- Security: every `/api/**` route requires a JWT except `POST /api/auth/login`. Security errors (401/403) go through `GlobalExceptionHandler`. Get the current librarian with `@AuthenticationPrincipal Jwt jwt` (`jwt.getSubject()` is the username).
+- Nested `@ConfigurationProperties` records need `@Valid` for their constraints to apply.
+- Inject `java.time.Clock` (bean in `TimeConfig`) instead of calling `Instant.now()`/`LocalDate.now()`, so time-based logic is testable.
 
 ### Frontend
 - Functional components + hooks only.
