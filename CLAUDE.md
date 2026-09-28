@@ -5,7 +5,7 @@ A web application for managing a library: books catalogue, members, loans/return
 ## Repository layout
 
 ```
-backend/    Spring Boot 3 REST API (Java 21, Maven wrapper)
+backend/    Spring Boot 3 REST API (Java 17, Maven wrapper)
 frontend/   React + Vite + TypeScript SPA
 .claude/    AI harness: project skills (testing, pr-review, raise-pr)
 .github/    PR template, CI workflows

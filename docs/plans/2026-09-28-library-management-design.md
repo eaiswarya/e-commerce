@@ -1,0 +1,173 @@
+# Library Management System — Design
+
+**Date:** 2026-09-28
+**Status:** Approved
+
+## Goal
+
+A staff-facing web app for a library: manage books and members, record borrowing and returns, and search the catalogue.
+
+## Decisions
+
+| Topic | Decision |
+|-------|----------|
+| Users | Librarians/admins only log in. Members are records, no login. |
+| Database | PostgreSQL (prod), H2 in-memory (dev + tests). Schema via Flyway. |
+| Copies | Count per title: `totalCopies` / `availableCopies`. |
+| Loan rules | 14-day loan period, max 5 active loans per member, blocked while any loan is overdue. No fines. Values configurable. |
+| Auth | Stateless JWT (Bearer), BCrypt passwords, 8h expiry, admin seeded on first start. |
+| Runtime | Java 17, Spring Boot 3, Maven wrapper; React 18 + Vite + TypeScript. |
+
+## Architecture
+
+```
+backend/   Spring Boot REST API on :8080, profiles dev (H2) and prod (PostgreSQL)
+frontend/  React SPA; Vite dev server proxies /api → :8080
+```
+
+Hibernate runs with `ddl-auto=validate`; Flyway owns the schema.
+
+### Backend packages (by feature)
+
+```
+com.library
+├── auth      login, JWT filter, SecurityConfig, Librarian entity
+├── book      Book entity, repository, service, controller, DTOs
+├── member    Member ...
+├── loan      Loan ... (borrow/return rules)
+└── common    GlobalExceptionHandler, ErrorResponse, PageResponse
+```
+
+## Data model
+
+| Table | Columns |
+|-------|---------|
+| `librarian` | id, username (unique), password_hash, full_name |
+| `book` | id, isbn (unique), title, author, category, published_year, total_copies, available_copies, version |
+| `member` | id, member_code (unique, `M0001`), full_name, email (unique), phone, active, joined_at, version |
+| `loan` | id, book_id → book, member_id → member, borrowed_at, due_date, returned_at (null = active) |
+
+Constraints and invariants:
+- `CHECK (0 <= available_copies AND available_copies <= total_copies)`
+- `version` columns give optimistic locking; concurrent borrows of the last copy cannot oversell.
+- Books and members with active loans cannot be deleted. Members are deactivated, never hard-deleted, to keep history.
+
+## API
+
+All routes under `/api`, JWT required except login. List endpoints are paged (`?page=0&size=20&sort=title,asc`) and return `{ content, page, size, totalElements, totalPages }`.
+
+### Auth
+- `POST /api/auth/login` `{username, password}` → `{token, expiresAt, fullName}`
+- `GET /api/auth/me`
+
+### Books
+- `GET /api/books?q=&category=&available=` — `q` matches title, author or ISBN, case-insensitive
+- `GET /api/books/{id}`, `POST /api/books`, `PUT /api/books/{id}`, `DELETE /api/books/{id}`
+- Changing `totalCopies` shifts `availableCopies` by the same amount; rejected if total would fall below copies currently on loan.
+
+### Members
+- `GET /api/members?q=&active=` — `q` matches name, email or member code
+- `GET /api/members/{id}`, `POST /api/members`, `PUT /api/members/{id}`, `PATCH /api/members/{id}/deactivate`
+- `GET /api/members/{id}/loans?status=active|returned|all`
+
+### Loans
+- `POST /api/loans` `{bookId, memberId}` — requires active member, fewer than max active loans, no overdue loans, and an available copy. Decrements `availableCopies`, sets `dueDate = today + periodDays`.
+- `POST /api/loans/{id}/return` — sets `returnedAt`, increments `availableCopies`; rejected if already returned.
+- `GET /api/loans?status=active|overdue|returned&memberId=&bookId=`
+
+Borrow and return each run in one transaction.
+
+### Errors
+
+`GlobalExceptionHandler` returns `{ status, error, message, fieldErrors?, timestamp }`.
+
+| Case | Status | `error` |
+|------|--------|---------|
+| Validation failure | 400 | `VALIDATION_FAILED` + `fieldErrors` |
+| Bad credentials / missing or expired token | 401 | `UNAUTHORIZED` |
+| Resource missing | 404 | `NOT_FOUND` |
+| No copies available | 409 | `NO_COPIES_AVAILABLE` |
+| Loan limit reached | 409 | `LOAN_LIMIT_REACHED` |
+| Member has overdue loans | 409 | `MEMBER_HAS_OVERDUE` |
+| Member inactive | 409 | `MEMBER_INACTIVE` |
+| Loan already returned | 409 | `ALREADY_RETURNED` |
+| Delete with active loans | 409 | `HAS_ACTIVE_LOANS` |
+| Duplicate ISBN / email | 409 | `DUPLICATE` |
+| Optimistic lock conflict | 409 | `CONCURRENT_UPDATE` |
+
+### Configuration
+
+```yaml
+library:
+  loan:
+    period-days: 14
+    max-active: 5
+  jwt:
+    secret: ${JWT_SECRET}
+    expiry: 8h
+```
+
+## Frontend
+
+React 18, TypeScript, Vite, React Router, TanStack Query, CSS modules with a small shared component set.
+
+### Pages
+
+| Route | Content |
+|-------|---------|
+| `/login` | Username/password form |
+| `/` | Dashboard: totals (books, active members, active loans, overdue) and overdue list |
+| `/books` | Search, category and "available only" filters, paged table, add/edit/delete |
+| `/books/:id` | Details and current loans |
+| `/members` | Search, paged table, add/edit, deactivate |
+| `/members/:id` | Details, active and past loans, Return button per active loan |
+| `/loans` | Active / Overdue / Returned tabs, Borrow dialog |
+
+**Borrow flow:** pick member (searchable) → pick book (searchable, available only) → confirm. A 409 is shown as a plain-language message.
+
+### Layout
+
+```
+src/
+├── api/         client.ts (fetch wrapper: token, error mapping), books.ts, members.ts, loans.ts, auth.ts
+├── auth/        AuthContext, ProtectedRoute
+├── components/  Table, Pagination, SearchInput, Modal, FormField, ErrorBanner, EmptyState
+├── pages/       one folder per page
+└── types.ts     shared API types
+```
+
+- Token held in memory and `sessionStorage`.
+- A 401 clears the token and redirects to `/login`.
+- Every page handles loading, error (with retry) and empty states.
+- Forms validate on the client; API `fieldErrors` map onto fields.
+
+## Testing
+
+**Backend** (`./mvnw verify`, JaCoCo):
+- Service unit tests (JUnit 5 + Mockito) covering every loan rule and the book copy-count edit rule
+- `@WebMvcTest` controller tests: 400 / 401 / 404 / 409
+- `@DataJpaTest` repository tests: search, overdue queries, constraints
+- One `@SpringBootTest` flow: login → add book → add member → borrow → return
+
+**Frontend** (Vitest + React Testing Library, API mocked):
+- API client: token, 401 handling, error mapping
+- Books / Members / Loans pages: loading, error, empty, success
+- Borrow dialog, including 409 display
+- Login and protected-route redirect
+
+## Delivery
+
+Each PR is built test-first and shipped with `/testing` → `/pr-review` → `/raise-pr`.
+
+1. `feature/backend-scaffold` — Spring Boot project, profiles, Flyway, error handling, health check
+2. `feature/auth` — Librarian, JWT, security config, admin seed
+3. `feature/books` — CRUD and search
+4. `feature/members` — CRUD, search, deactivate
+5. `feature/loans` — borrow, return, rules
+6. `feature/frontend-scaffold` — Vite, routing, API client, auth, login page
+7. `feature/frontend-pages` — dashboard, books, members, loans
+8. `chore/ci` — GitHub Actions running backend and frontend checks
+
+## Out of scope (v1)
+
+Fines, member logins, reservations, email reminders, barcodes / per-copy tracking, multiple branches.
