@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -55,6 +58,17 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
 	ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
 		return respond(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Invalid value for parameter '" + ex.getName() + "'");
+	}
+
+	@ExceptionHandler(AuthenticationException.class)
+	ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException ex) {
+		String message = (ex instanceof BadCredentialsException) ? ex.getMessage() : "Authentication required";
+		return respond(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", message);
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+		return respond(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access denied");
 	}
 
 	@ExceptionHandler(Exception.class)

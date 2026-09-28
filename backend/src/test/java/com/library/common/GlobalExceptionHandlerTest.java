@@ -9,10 +9,13 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @WebMvcTest(controllers = GlobalExceptionHandlerTest.ThrowingController.class)
 @Import({ GlobalExceptionHandlerTest.ThrowingController.class, GlobalExceptionHandler.class })
+@AutoConfigureMockMvc(addFilters = false)
 class GlobalExceptionHandlerTest {
 
 	@Autowired
@@ -105,6 +109,20 @@ class GlobalExceptionHandlerTest {
 			.andExpect(jsonPath("$.error").value("BAD_REQUEST"));
 	}
 
+	@Test
+	void authenticationFailureReturns401() throws Exception {
+		mockMvc.perform(get("/test/unauthenticated"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.error").value("UNAUTHORIZED"));
+	}
+
+	@Test
+	void accessDeniedReturns403() throws Exception {
+		mockMvc.perform(get("/test/forbidden"))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.error").value("FORBIDDEN"));
+	}
+
 	@RestController
 	static class ThrowingController {
 
@@ -137,6 +155,16 @@ class GlobalExceptionHandlerTest {
 		@GetMapping("/test/boom")
 		void boom() {
 			throw new IllegalStateException("secret internals");
+		}
+
+		@GetMapping("/test/unauthenticated")
+		void unauthenticated() {
+			throw new BadCredentialsException("Invalid username or password");
+		}
+
+		@GetMapping("/test/forbidden")
+		void forbidden() {
+			throw new AccessDeniedException("nope");
 		}
 	}
 }
