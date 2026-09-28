@@ -15,3 +15,8 @@ management:
     web:
       exposure:
         include: health
+
+library:
+  loan:
+    period-days: 14
+    max-active: 5
