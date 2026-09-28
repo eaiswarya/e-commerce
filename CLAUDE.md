@@ -5,7 +5,7 @@ A web application for managing a library: books catalogue, members, loans/return
 ## Repository layout
 
 ```
-backend/    Spring Boot 3 REST API (Java 17, Maven wrapper)
+backend/    Spring Boot 4 REST API (Java 17, Maven wrapper)
 frontend/   React + Vite + TypeScript SPA
 .claude/    AI harness: project skills (testing, pr-review, raise-pr)
 .github/    PR template, CI workflows
@@ -15,7 +15,7 @@ frontend/   React + Vite + TypeScript SPA
 
 ## Tech stack
 
-- **Backend:** Spring Boot 3, Spring Web, Spring Data JPA, Spring Security, Bean Validation, JUnit 5, Mockito, Spring Boot Test, JaCoCo
+- **Backend:** Spring Boot 4.1, Spring Web MVC, Spring Data JPA, Spring Security, Bean Validation, JUnit 5, Mockito, Spring Boot Test, JaCoCo
 - **Frontend:** React, Vite, TypeScript, React Router, Vitest, React Testing Library, ESLint, Prettier
 
 ## Commands

@@ -16,7 +16,7 @@ A staff-facing web app for a library: manage books and members, record borrowing
 | Copies | Count per title: `totalCopies` / `availableCopies`. |
 | Loan rules | 14-day loan period, max 5 active loans per member, blocked while any loan is overdue. No fines. Values configurable. |
 | Auth | Stateless JWT (Bearer), BCrypt passwords, 8h expiry, admin seeded on first start. |
-| Runtime | Java 17, Spring Boot 3, Maven wrapper; React 18 + Vite + TypeScript. |
+| Runtime | Java 17, Spring Boot 4.1.1, Maven wrapper; React 18 + Vite + TypeScript. |
 
 ## Architecture
 
