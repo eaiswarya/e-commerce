@@ -1,5 +1,7 @@
 package com.library.auth;
 
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,17 +16,24 @@ public class AuthService {
 
 	private final TokenService tokenService;
 
+	/** Checked when the username is unknown, so response time doesn't reveal which usernames exist. */
+	private final String dummyHash;
+
 	public AuthService(LibrarianRepository repository, PasswordEncoder passwordEncoder, TokenService tokenService) {
 		this.repository = repository;
 		this.passwordEncoder = passwordEncoder;
 		this.tokenService = tokenService;
+		this.dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
 	}
 
 	@Transactional(readOnly = true)
 	public LoginResponse login(String username, String password) {
-		Librarian librarian = repository.findByUsername(username)
-			.filter(l -> passwordEncoder.matches(password, l.getPasswordHash()))
-			.orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
+		Optional<Librarian> found = repository.findByUsername(username);
+		boolean matches = passwordEncoder.matches(password, found.map(Librarian::getPasswordHash).orElse(dummyHash));
+		if (found.isEmpty() || !matches) {
+			throw new BadCredentialsException("Invalid username or password");
+		}
+		Librarian librarian = found.get();
 		IssuedToken token = tokenService.issue(librarian);
 		return new LoginResponse(token.token(), token.expiresAt(), librarian.getFullName());
 	}

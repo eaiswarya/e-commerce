@@ -2,6 +2,9 @@ package com.library.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
@@ -58,5 +61,14 @@ class AuthServiceTest {
 
 		assertThatThrownBy(() -> authService.login("ghost", "secret")).isInstanceOf(BadCredentialsException.class)
 			.hasMessage("Invalid username or password");
+	}
+
+	@Test
+	void checksPasswordEvenForUnknownUserSoTimingDoesNotRevealUsernames() {
+		when(repository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> authService.login("ghost", "secret")).isInstanceOf(BadCredentialsException.class);
+
+		verify(passwordEncoder).matches(eq("secret"), any());
 	}
 }
