@@ -6,3 +6,8 @@ spring:
   h2:
     console:
       enabled: true
+library:
+  jwt:
+    secret: dev-only-secret-change-me-0123456789abcdef
+  admin:
+    password: ${ADMIN_PASSWORD:admin123}

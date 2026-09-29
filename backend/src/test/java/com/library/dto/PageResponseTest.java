@@ -1,4 +1,4 @@
-package com.library.common;
+package com.library.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

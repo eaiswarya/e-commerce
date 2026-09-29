@@ -1,4 +1,4 @@
-package com.library.common;
+package com.library.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;

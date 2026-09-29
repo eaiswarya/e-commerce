@@ -1,24 +1,26 @@
-package com.library.common;
+package com.library.exception;
 
+import com.library.dto.ErrorResponse;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	@ExceptionHandler(NotFoundException.class)
 	ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
@@ -55,6 +57,17 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
 	ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
 		return respond(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Invalid value for parameter '" + ex.getName() + "'");
+	}
+
+	@ExceptionHandler(AuthenticationException.class)
+	ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException ex) {
+		String message = (ex instanceof BadCredentialsException) ? ex.getMessage() : "Authentication required";
+		return respond(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", message);
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+		return respond(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access denied");
 	}
 
 	@ExceptionHandler(Exception.class)

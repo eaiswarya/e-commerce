@@ -1,4 +1,4 @@
-package com.library.common;
+package com.library.dto;
 
 import java.util.List;
 import org.springframework.data.domain.Page;
