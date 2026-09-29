@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class TokenService {
 
+	/** Written to every token's {@code iss} claim and required by the decoder. */
+	static final String ISSUER = "library-api";
+
 	private final JwtEncoder encoder;
 
 	private final LibraryProperties properties;
@@ -29,7 +32,7 @@ public class TokenService {
 		Instant now = clock.instant();
 		Instant expiresAt = now.plus(properties.jwt().expiry());
 		JwtClaimsSet claims = JwtClaimsSet.builder()
-			.issuer("library-api")
+			.issuer(ISSUER)
 			.subject(librarian.getUsername())
 			.claim("name", librarian.getFullName())
 			.issuedAt(now)
