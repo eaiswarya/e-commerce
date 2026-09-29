@@ -1,14 +1,18 @@
 package com.library.controller;
 
+import com.library.dto.LoanResponse;
 import com.library.dto.MemberRequest;
 import com.library.dto.MemberResponse;
 import com.library.dto.PageResponse;
+import com.library.entity.LoanStatus;
+import com.library.service.LoanService;
 import com.library.service.MemberService;
 import jakarta.validation.Valid;
 import jakarta.validation.groups.Default;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -29,6 +33,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class MemberController {
 
 	private final MemberService memberService;
+
+	private final LoanService loanService;
 
 	@GetMapping
 	PageResponse<MemberResponse> search(@RequestParam(required = false) String q,
@@ -56,6 +62,13 @@ public class MemberController {
 	MemberResponse update(@PathVariable Long id,
 			@Validated({ Default.class, MemberRequest.OnUpdate.class }) @RequestBody MemberRequest request) {
 		return memberService.update(id, request);
+	}
+
+	/** {@code status} is {@code active} (overdue included), {@code overdue}, {@code returned} or {@code all} (default). */
+	@GetMapping("/{id}/loans")
+	PageResponse<LoanResponse> loans(@PathVariable Long id, @RequestParam(required = false) LoanStatus status,
+			@PageableDefault(size = 20, sort = "borrowedAt", direction = Sort.Direction.DESC) Pageable pageable) {
+		return loanService.memberLoans(id, status, pageable);
 	}
 
 	/** Members are never deleted, so their loan history is kept. Repeating the call is harmless. */

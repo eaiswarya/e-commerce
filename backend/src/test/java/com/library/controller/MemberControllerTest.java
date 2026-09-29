@@ -14,14 +14,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.library.dto.LoanResponse;
 import com.library.dto.MemberRequest;
 import com.library.dto.MemberResponse;
 import com.library.dto.PageResponse;
+import com.library.entity.LoanStatus;
 import com.library.entity.Member;
 import com.library.exception.BusinessRuleException;
 import com.library.exception.NotFoundException;
+import com.library.service.LoanService;
 import com.library.service.MemberService;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +55,9 @@ class MemberControllerTest {
 
 	@MockitoBean
 	private MemberService service;
+
+	@MockitoBean
+	private LoanService loanService;
 
 	@Test
 	void searchUsesDefaultPagingSortedByFullName() throws Exception {
@@ -195,5 +202,44 @@ class MemberControllerTest {
 	void membersCannotBeDeleted() throws Exception {
 		mockMvc.perform(delete("/api/members/7")).andExpect(status().isMethodNotAllowed());
 		verifyNoInteractions(service);
+	}
+
+	@Test
+	void memberLoansDefaultToAllStatusesNewestFirst() throws Exception {
+		LoanResponse loan = new LoanResponse(11L, 3L, "Effective Java", "9780134685991", 7L, "M0007", "Ada Lovelace",
+				MEMBER.joinedAt(), LocalDate.parse("2026-10-13"), null, LoanStatus.ACTIVE);
+		when(loanService.memberLoans(7L, null, PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "borrowedAt"))))
+			.thenReturn(new PageResponse<>(List.of(loan), 0, 20, 1, 1));
+
+		mockMvc.perform(get("/api/members/7/loans"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content[0].bookTitle").value("Effective Java"))
+			.andExpect(jsonPath("$.content[0].dueDate").value("2026-10-13"))
+			.andExpect(jsonPath("$.content[0].status").value("ACTIVE"));
+	}
+
+	@Test
+	void memberLoansAcceptStatusInAnyCase() throws Exception {
+		when(loanService.memberLoans(eq(7L), any(), any())).thenReturn(new PageResponse<>(List.of(), 0, 20, 0, 0));
+
+		mockMvc.perform(get("/api/members/7/loans").param("status", "Returned")).andExpect(status().isOk());
+
+		verify(loanService).memberLoans(7L, LoanStatus.RETURNED,
+				PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "borrowedAt")));
+	}
+
+	@Test
+	void memberLoansWithUnknownStatusReturns400() throws Exception {
+		mockMvc.perform(get("/api/members/7/loans").param("status", "lost"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.error").value("BAD_REQUEST"));
+		verifyNoInteractions(loanService);
+	}
+
+	@Test
+	void loansOfMissingMemberReturn404() throws Exception {
+		when(loanService.memberLoans(eq(7L), any(), any())).thenThrow(new NotFoundException("Member 7 not found"));
+
+		mockMvc.perform(get("/api/members/7/loans")).andExpect(status().isNotFound());
 	}
 }
