@@ -41,7 +41,7 @@ npm run dev          # local dev server
 ## Conventions
 
 ### Backend
-- Layered: `controller` → `service` → `repository`; packages by feature (`book`, `member`, `loan`, `auth`).
+- Layered: `controller` → `service` → `repository`, with packages by layer under `com.library`: `controller`, `service`, `repository`, `entity` (JPA entities), `dto` (request/response records), `security`, `exception` (custom exceptions + `GlobalExceptionHandler`), `config` (`@ConfigurationProperties`, beans). Tests mirror the same packages.
 - Controllers accept/return DTOs only — never expose JPA entities.
 - Validate input with `@Valid` + Bean Validation annotations.
 - Errors handled centrally in a `@RestControllerAdvice`; return consistent error JSON.
