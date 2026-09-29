@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -37,6 +38,13 @@ public class GlobalExceptionHandler {
 	ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
 		return respond(HttpStatus.CONFLICT, "CONCURRENT_UPDATE",
 				"The record was changed by someone else. Please retry.");
+	}
+
+	/** A DB constraint caught what the service checks missed, e.g. two requests racing to create the same ISBN. */
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+		log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+		return respond(HttpStatus.CONFLICT, "CONFLICT", "The request conflicts with existing data");
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)

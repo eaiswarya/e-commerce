@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.data.core.TypeInformation;
 import org.springframework.http.MediaType;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -57,6 +58,14 @@ class GlobalExceptionHandlerTest {
 		mockMvc.perform(get("/test/lock"))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.error").value("CONCURRENT_UPDATE"));
+	}
+
+	@Test
+	void dataIntegrityViolationReturns409WithoutLeakingDetails() throws Exception {
+		mockMvc.perform(get("/test/integrity"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.error").value("CONFLICT"))
+			.andExpect(jsonPath("$.message").value("The request conflicts with existing data"));
 	}
 
 	@Test
@@ -148,6 +157,11 @@ class GlobalExceptionHandlerTest {
 		@GetMapping("/test/rule")
 		void rule() {
 			throw new BusinessRuleException("NO_COPIES_AVAILABLE", "No copies available");
+		}
+
+		@GetMapping("/test/integrity")
+		void integrity() {
+			throw new DataIntegrityViolationException("duplicate key value violates unique constraint \"book_isbn_key\"");
 		}
 
 		@GetMapping("/test/lock")
