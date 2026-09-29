@@ -17,8 +17,8 @@ public record MemberRequest(
 		@Pattern(regexp = PHONE, message = "must be a phone number") String phone,
 		@NotNull(groups = OnUpdate.class) Long version) {
 
-	/** Empty, or an optional leading {@code +} followed by 3–29 digits, spaces, hyphens or parentheses. */
-	static final String PHONE = "^$|^\\+?[0-9 ()-]{3,29}$";
+	/** Empty, or an optional leading {@code +} then 3–29 digits, spaces, hyphens or parentheses, with at least one digit. */
+	static final String PHONE = "^$|^\\+?(?=[^0-9]*[0-9])[0-9 ()-]{3,29}$";
 
 	/** Validation group for constraints that apply only when updating. */
 	public interface OnUpdate {

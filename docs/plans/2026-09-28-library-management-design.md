@@ -77,7 +77,7 @@ All routes under `/api`, JWT required except login. List endpoints are paged (`?
 - `GET /api/members/{id}`, `POST /api/members` (201 + `Location`), `PUT /api/members/{id}`, `PATCH /api/members/{id}/deactivate` (200, idempotent). There is no DELETE.
 - Request: `{fullName, email, phone?, version}`.
   - Email is stored lowercased and must be unique regardless of case (409 `DUPLICATE`).
-  - Phone is an optional leading `+` followed by 3–29 digits, spaces, hyphens or parentheses; an empty phone is stored as none.
+  - Phone is an optional leading `+` followed by 3–29 digits, spaces, hyphens or parentheses, with at least one digit; an empty phone is stored as none.
   - `version` is ignored on `POST` and **required on `PUT`**; a stale one gives 409 `CONCURRENT_UPDATE`, as for books.
 - Response: `{id, memberCode, fullName, email, phone, active, joinedAt, version}`.
   - `memberCode` is assigned on create from a DB sequence (`M0001`, `M0002`, ...) and never changes.

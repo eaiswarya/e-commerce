@@ -43,7 +43,7 @@ class MemberRequestTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { "12", "call me", "555-0100 ext. 4", "++44 20", "1234567890123456789012345678901" })
+	@ValueSource(strings = { "12", "call me", "555-0100 ext. 4", "++44 20", "1234567890123456789012345678901", "---", "( )" })
 	void rejectsMalformedPhone(String phone) {
 		assertThat(violations(new MemberRequest("Ada Lovelace", "ada@example.com", phone, null))).containsExactly("phone");
 	}
