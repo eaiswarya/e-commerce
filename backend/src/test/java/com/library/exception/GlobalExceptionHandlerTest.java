@@ -6,17 +6,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import jakarta.validation.Valid;
-import java.util.List;
 import jakarta.validation.constraints.NotBlank;
+import java.sql.SQLException;
+import java.util.List;
+import org.hibernate.exception.ConstraintViolationException;
+import org.hibernate.exception.ConstraintViolationException.ConstraintKind;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.data.core.TypeInformation;
 import org.springframework.http.MediaType;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -61,11 +64,19 @@ class GlobalExceptionHandlerTest {
 	}
 
 	@Test
-	void dataIntegrityViolationReturns409WithoutLeakingDetails() throws Exception {
-		mockMvc.perform(get("/test/integrity"))
+	void uniqueConstraintViolationReturns409Duplicate() throws Exception {
+		mockMvc.perform(get("/test/integrity").param("kind", "UNIQUE"))
 			.andExpect(status().isConflict())
-			.andExpect(jsonPath("$.error").value("CONFLICT"))
-			.andExpect(jsonPath("$.message").value("The request conflicts with existing data"));
+			.andExpect(jsonPath("$.error").value("DUPLICATE"))
+			.andExpect(jsonPath("$.message").value("A record with the same unique value already exists"));
+	}
+
+	@Test
+	void otherConstraintViolationsStay500() throws Exception {
+		mockMvc.perform(get("/test/integrity").param("kind", "CHECK"))
+			.andExpect(status().isInternalServerError())
+			.andExpect(jsonPath("$.error").value("INTERNAL_ERROR"))
+			.andExpect(jsonPath("$.message").value("Unexpected error"));
 	}
 
 	@Test
@@ -160,8 +171,9 @@ class GlobalExceptionHandlerTest {
 		}
 
 		@GetMapping("/test/integrity")
-		void integrity() {
-			throw new DataIntegrityViolationException("duplicate key value violates unique constraint \"book_isbn_key\"");
+		void integrity(@RequestParam ConstraintKind kind) {
+			throw new DataIntegrityViolationException("could not execute statement",
+					new ConstraintViolationException("violation", new SQLException("violation"), kind, "some_constraint"));
 		}
 
 		@GetMapping("/test/lock")

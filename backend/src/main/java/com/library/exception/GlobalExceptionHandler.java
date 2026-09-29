@@ -5,12 +5,14 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
+import org.hibernate.exception.ConstraintViolationException.ConstraintKind;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -43,8 +45,21 @@ public class GlobalExceptionHandler {
 	/** A DB constraint caught what the service checks missed, e.g. two requests racing to create the same ISBN. */
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
-		log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
-		return respond(HttpStatus.CONFLICT, "CONFLICT", "The request conflicts with existing data");
+		if (violatedConstraintKind(ex) == ConstraintKind.UNIQUE) {
+			log.warn("Unique constraint violation: {}", ex.getMostSpecificCause().getMessage());
+			return respond(HttpStatus.CONFLICT, "DUPLICATE", "A record with the same unique value already exists");
+		}
+		// NOT NULL, CHECK, FOREIGN KEY: the service should have prevented these, so treat them as bugs.
+		return handleUnexpected(ex);
+	}
+
+	private static ConstraintKind violatedConstraintKind(Throwable ex) {
+		for (Throwable t = ex; t != null; t = t.getCause()) {
+			if (t instanceof ConstraintViolationException violation) {
+				return violation.getKind();
+			}
+		}
+		return null;
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
