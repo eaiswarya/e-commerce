@@ -59,16 +59,18 @@ Constraints and invariants:
 
 ## API
 
-All routes under `/api`, JWT required except login. List endpoints are paged (`?page=0&size=20&sort=title,asc`) and return `{ content, page, size, totalElements, totalPages }`.
+All routes under `/api`, JWT required except login. List endpoints are paged (`?page=0&size=20&sort=title,asc`) and return `{ content, page, size, totalElements, totalPages }`. `size` is capped at 100; an unknown `sort` field is a 400 `BAD_REQUEST`.
 
 ### Auth
 - `POST /api/auth/login` `{username, password}` → `{token, expiresAt, fullName}`
 - `GET /api/auth/me`
 
 ### Books
-- `GET /api/books?q=&category=&available=` — `q` matches title, author or ISBN, case-insensitive
-- `GET /api/books/{id}`, `POST /api/books`, `PUT /api/books/{id}`, `DELETE /api/books/{id}`
-- Changing `totalCopies` shifts `availableCopies` by the same amount; rejected if total would fall below copies currently on loan.
+- `GET /api/books?q=&category=&available=` — `q` matches title or author (contains, case-insensitive) or the ISBN (exact, hyphens/spaces ignored); `category` is case-insensitive; `available=true` keeps only books with a free copy (omitted or `false` = no filter). Default sort `title`.
+- `GET /api/books/{id}`, `POST /api/books` (201 + `Location`), `PUT /api/books/{id}`, `DELETE /api/books/{id}` (204)
+- Request: `{isbn, title, author, category?, publishedYear?, totalCopies, version}`. ISBN-10 or ISBN-13, stored without hyphens/spaces. `version` is ignored on `POST` and **required on `PUT`**.
+- Response: `{id, isbn, title, author, category, publishedYear, totalCopies, availableCopies, version}`. Send `version` back unchanged on the next `PUT`; if the book changed in the meantime the update is rejected with 409 `CONCURRENT_UPDATE` (reload and retry). A successful `PUT` returns the new `version`.
+- Changing `totalCopies` shifts `availableCopies` by the same amount; rejected (409 `COPIES_ON_LOAN`) if total would fall below copies currently on loan.
 
 ### Members
 - `GET /api/members?q=&active=` — `q` matches name, email or member code
@@ -97,8 +99,10 @@ Borrow and return each run in one transaction.
 | Member inactive | 409 | `MEMBER_INACTIVE` |
 | Loan already returned | 409 | `ALREADY_RETURNED` |
 | Delete with active loans | 409 | `HAS_ACTIVE_LOANS` |
-| Duplicate ISBN / email | 409 | `DUPLICATE` |
-| Optimistic lock conflict | 409 | `CONCURRENT_UPDATE` |
+| Total copies below copies on loan | 409 | `COPIES_ON_LOAN` |
+| Duplicate ISBN / email (including a race caught by the DB unique index) | 409 | `DUPLICATE` |
+| Optimistic lock conflict / stale `version` on update | 409 | `CONCURRENT_UPDATE` |
+| Unknown `sort` field, malformed parameter | 400 | `BAD_REQUEST` |
 
 ### Configuration
 
