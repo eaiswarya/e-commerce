@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -57,6 +58,12 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
 	ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
 		return respond(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Invalid value for parameter '" + ex.getName() + "'");
+	}
+
+	/** A {@code sort=} field that doesn't exist; the message omits the entity type name. */
+	@ExceptionHandler(PropertyReferenceException.class)
+	ResponseEntity<ErrorResponse> handleUnknownProperty(PropertyReferenceException ex) {
+		return respond(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Unknown sort property '" + ex.getPropertyName() + "'");
 	}
 
 	@ExceptionHandler(AuthenticationException.class)
