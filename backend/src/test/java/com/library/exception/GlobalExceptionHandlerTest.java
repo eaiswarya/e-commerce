@@ -7,11 +7,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.sql.SQLException;
+import java.util.List;
+import org.hibernate.exception.ConstraintViolationException;
+import org.hibernate.exception.ConstraintViolationException.ConstraintKind;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.http.MediaType;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
@@ -54,6 +61,22 @@ class GlobalExceptionHandlerTest {
 		mockMvc.perform(get("/test/lock"))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.error").value("CONCURRENT_UPDATE"));
+	}
+
+	@Test
+	void uniqueConstraintViolationReturns409Duplicate() throws Exception {
+		mockMvc.perform(get("/test/integrity").param("kind", "UNIQUE"))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.error").value("DUPLICATE"))
+			.andExpect(jsonPath("$.message").value("A record with the same unique value already exists"));
+	}
+
+	@Test
+	void otherConstraintViolationsStay500() throws Exception {
+		mockMvc.perform(get("/test/integrity").param("kind", "CHECK"))
+			.andExpect(status().isInternalServerError())
+			.andExpect(jsonPath("$.error").value("INTERNAL_ERROR"))
+			.andExpect(jsonPath("$.message").value("Unexpected error"));
 	}
 
 	@Test
@@ -110,6 +133,14 @@ class GlobalExceptionHandlerTest {
 	}
 
 	@Test
+	void unknownSortPropertyReturns400WithoutTypeName() throws Exception {
+		mockMvc.perform(get("/test/bad-sort"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.error").value("BAD_REQUEST"))
+			.andExpect(jsonPath("$.message").value("Unknown sort property 'nope'"));
+	}
+
+	@Test
 	void authenticationFailureReturns401() throws Exception {
 		mockMvc.perform(get("/test/unauthenticated"))
 			.andExpect(status().isUnauthorized())
@@ -139,6 +170,12 @@ class GlobalExceptionHandlerTest {
 			throw new BusinessRuleException("NO_COPIES_AVAILABLE", "No copies available");
 		}
 
+		@GetMapping("/test/integrity")
+		void integrity(@RequestParam ConstraintKind kind) {
+			throw new DataIntegrityViolationException("could not execute statement",
+					new ConstraintViolationException("violation", new SQLException("violation"), kind, "some_constraint"));
+		}
+
 		@GetMapping("/test/lock")
 		void lock() {
 			throw new ObjectOptimisticLockingFailureException(Object.class, 1L);
@@ -155,6 +192,11 @@ class GlobalExceptionHandlerTest {
 		@GetMapping("/test/boom")
 		void boom() {
 			throw new IllegalStateException("secret internals");
+		}
+
+		@GetMapping("/test/bad-sort")
+		void badSort() {
+			throw new PropertyReferenceException("nope", TypeInformation.of(Object.class), List.of());
 		}
 
 		@GetMapping("/test/unauthenticated")

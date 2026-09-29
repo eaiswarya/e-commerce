@@ -5,6 +5,10 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
+import org.hibernate.exception.ConstraintViolationException.ConstraintKind;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +42,26 @@ public class GlobalExceptionHandler {
 				"The record was changed by someone else. Please retry.");
 	}
 
+	/** A DB constraint caught what the service checks missed, e.g. two requests racing to create the same ISBN. */
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+		if (violatedConstraintKind(ex) == ConstraintKind.UNIQUE) {
+			log.warn("Unique constraint violation: {}", ex.getMostSpecificCause().getMessage());
+			return respond(HttpStatus.CONFLICT, "DUPLICATE", "A record with the same unique value already exists");
+		}
+		// NOT NULL, CHECK, FOREIGN KEY: the service should have prevented these, so treat them as bugs.
+		return handleUnexpected(ex);
+	}
+
+	private static ConstraintKind violatedConstraintKind(Throwable ex) {
+		for (Throwable t = ex; t != null; t = t.getCause()) {
+			if (t instanceof ConstraintViolationException violation) {
+				return violation.getKind();
+			}
+		}
+		return null;
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
 		Map<String, String> fieldErrors = new LinkedHashMap<>();
@@ -57,6 +81,12 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
 	ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
 		return respond(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Invalid value for parameter '" + ex.getName() + "'");
+	}
+
+	/** A {@code sort=} field that doesn't exist; the message omits the entity type name. */
+	@ExceptionHandler(PropertyReferenceException.class)
+	ResponseEntity<ErrorResponse> handleUnknownProperty(PropertyReferenceException ex) {
+		return respond(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Unknown sort property '" + ex.getPropertyName() + "'");
 	}
 
 	@ExceptionHandler(AuthenticationException.class)
