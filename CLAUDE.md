@@ -15,7 +15,7 @@ frontend/   React + Vite + TypeScript SPA
 
 ## Tech stack
 
-- **Backend:** Spring Boot 4.1, Spring Web MVC, Spring Data JPA, Spring Security, Bean Validation, JUnit 5, Mockito, Spring Boot Test, JaCoCo
+- **Backend:** Spring Boot 4.1, Spring Web MVC, Spring Data JPA, Spring Security, Bean Validation, Lombok, JUnit 5, Mockito, Spring Boot Test, JaCoCo
 - **Frontend:** React, Vite, TypeScript, React Router, Vitest, React Testing Library, ESLint, Prettier
 
 ## Commands
@@ -43,6 +43,7 @@ npm run dev          # local dev server
 ### Backend
 - Layered: `controller` → `service` → `repository`, with packages by layer under `com.library`: `controller`, `service`, `repository`, `entity` (JPA entities), `dto` (request/response records), `security`, `exception` (custom exceptions + `GlobalExceptionHandler`), `config` (`@ConfigurationProperties`, beans). Tests mirror the same packages.
 - Controllers accept/return DTOs only — never expose JPA entities.
+- Use Lombok instead of boilerplate: `@RequiredArgsConstructor` for constructor injection, `@Slf4j` for loggers, `@Getter` / `@NoArgsConstructor(access = PROTECTED)` on entities. DTOs are Java records.
 - Validate input with `@Valid` + Bean Validation annotations.
 - Errors handled centrally in a `@RestControllerAdvice`; return consistent error JSON.
 - `@Transactional` on service methods that write; keep it out of controllers.
