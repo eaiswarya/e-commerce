@@ -7,6 +7,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
+import jakarta.validation.groups.Default;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class BookRequestTest {
 
@@ -50,7 +52,7 @@ class BookRequestTest {
 
 	@Test
 	void requiresIsbnTitleAuthorAndTotalCopies() {
-		BookRequest empty = new BookRequest(" ", " ", " ", null, null, null);
+		BookRequest empty = new BookRequest(" ", " ", " ", null, null, null, null);
 
 		assertThat(violations(empty)).containsExactlyInAnyOrder("isbn", "title", "author", "totalCopies");
 	}
@@ -58,28 +60,43 @@ class BookRequestTest {
 	@Test
 	void rejectsOutOfRangeValues() {
 		BookRequest request = new BookRequest("9780134685991", "t".repeat(201), "a".repeat(151), "c".repeat(51), 1449,
-				-1);
+				-1, null);
 
 		assertThat(violations(request)).containsExactlyInAnyOrder("title", "author", "category", "publishedYear",
 				"totalCopies");
-		assertThat(violations(new BookRequest("9780134685991", "T", "A", null, 2101, 1001)))
+		assertThat(violations(new BookRequest("9780134685991", "T", "A", null, 2101, 1001, null)))
 			.containsExactlyInAnyOrder("publishedYear", "totalCopies");
+	}
+
+	@Test
+	void versionIsRequiredOnlyWhenUpdating() {
+		BookRequest withoutVersion = request("9780134685991", 1);
+
+		assertThat(violations(withoutVersion)).isEmpty();
+		assertThat(violations(withoutVersion, Default.class, BookRequest.OnUpdate.class)).containsExactly("version");
+		assertThat(violations(withVersion(withoutVersion, 0L), Default.class, BookRequest.OnUpdate.class)).isEmpty();
 	}
 
 	@Test
 	void responseCopiesEveryField() {
 		Book book = new Book("9780134685991", "Effective Java", "Joshua Bloch", "Programming", 2018, 3);
+		ReflectionTestUtils.setField(book, "id", 7L);
+		ReflectionTestUtils.setField(book, "version", 4L);
 
-		assertThat(BookResponse.from(book))
-			.isEqualTo(new BookResponse(null, "9780134685991", "Effective Java", "Joshua Bloch", "Programming", 2018, 3, 3));
+		assertThat(BookResponse.from(book)).isEqualTo(
+				new BookResponse(7L, "9780134685991", "Effective Java", "Joshua Bloch", "Programming", 2018, 3, 3, 4L));
 	}
 
 	private static BookRequest request(String isbn, int copies) {
-		return new BookRequest(isbn, "Effective Java", "Joshua Bloch", "Programming", 2018, copies);
+		return new BookRequest(isbn, "Effective Java", "Joshua Bloch", "Programming", 2018, copies, null);
 	}
 
-	private static Set<String> violations(BookRequest request) {
-		return validator.validate(request)
+	private static BookRequest withVersion(BookRequest r, Long version) {
+		return new BookRequest(r.isbn(), r.title(), r.author(), r.category(), r.publishedYear(), r.totalCopies(), version);
+	}
+
+	private static Set<String> violations(BookRequest request, Class<?>... groups) {
+		return validator.validate(request, groups)
 			.stream()
 			.map(ConstraintViolation::getPropertyPath)
 			.map(Object::toString)

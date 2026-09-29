@@ -49,10 +49,12 @@ class BookApiIntegrationTest {
 			.andExpect(header().exists(HttpHeaders.LOCATION))
 			.andExpect(jsonPath("$.isbn").value("9781402894626"))
 			.andExpect(jsonPath("$.availableCopies").value(3))
+			.andExpect(jsonPath("$.version").value(0))
 			.andReturn()
 			.getResponse()
 			.getContentAsString();
 		long id = ((Number) JsonPath.read(created, "$.id")).longValue();
+		long version = ((Number) JsonPath.read(created, "$.version")).longValue();
 		long other = ((Number) JsonPath.read(mockMvc
 			.perform(authed(post("/api/books")).content(book("0-306-40615-2", "Zephyr Nights", "Fiction", 1)))
 			.andExpect(status().isCreated())
@@ -73,10 +75,19 @@ class BookApiIntegrationTest {
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.error").value("DUPLICATE"));
 
-		mockMvc.perform(authed(put("/api/books/" + id)).content(book("9781402894626", "Zephyr Gardens", "Programming", 0)))
+		String zeroCopies = book("9781402894626", "Zephyr Gardens", "Programming", 0);
+		mockMvc.perform(authed(put("/api/books/" + id)).content(zeroCopies))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.fieldErrors.version").exists());
+		mockMvc.perform(authed(put("/api/books/" + id)).content(withVersion(zeroCopies, version)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.totalCopies").value(0))
-			.andExpect(jsonPath("$.availableCopies").value(0));
+			.andExpect(jsonPath("$.availableCopies").value(0))
+			.andExpect(jsonPath("$.version").value(version + 1));
+		mockMvc.perform(authed(put("/api/books/" + id)).content(withVersion(zeroCopies, version)))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.error").value("CONCURRENT_UPDATE"));
+		mockMvc.perform(authed(get("/api/books/" + id))).andExpect(jsonPath("$.version").value(version + 1));
 		mockMvc.perform(authed(get("/api/books")).param("q", "zephyr").param("available", "true"))
 			.andExpect(jsonPath("$.content[*].title", contains("Zephyr Nights")));
 
@@ -118,5 +129,9 @@ class BookApiIntegrationTest {
 		return """
 				{"isbn":"%s","title":"%s","author":"Test Author","category":%s,"publishedYear":2020,"totalCopies":%d}"""
 			.formatted(isbn, title, categoryJson, copies);
+	}
+
+	private static String withVersion(String body, long version) {
+		return body.substring(0, body.length() - 1) + ",\"version\":" + version + "}";
 	}
 }

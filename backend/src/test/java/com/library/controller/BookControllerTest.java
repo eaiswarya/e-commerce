@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.library.dto.BookRequest;
 import com.library.dto.BookResponse;
 import com.library.dto.PageResponse;
+import com.library.entity.Book;
 import com.library.exception.BusinessRuleException;
 import com.library.exception.NotFoundException;
 import com.library.service.BookService;
@@ -28,6 +29,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -36,11 +38,13 @@ import org.springframework.test.web.servlet.MockMvc;
 class BookControllerTest {
 
 	private static final BookResponse BOOK = new BookResponse(7L, "9780134685991", "Effective Java", "Joshua Bloch",
-			"Programming", 2018, 3, 2);
+			"Programming", 2018, 3, 2, 4L);
 
 	private static final String BODY = """
 			{"isbn":"978-0-13-468599-1","title":"Effective Java","author":"Joshua Bloch",
 			 "category":"Programming","publishedYear":2018,"totalCopies":3}""";
+
+	private static final String UPDATE_BODY = BODY.replace("\"totalCopies\":3}", "\"totalCopies\":3,\"version\":4}");
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -106,10 +110,11 @@ class BookControllerTest {
 		mockMvc.perform(post("/api/books").contentType(MediaType.APPLICATION_JSON).content(BODY))
 			.andExpect(status().isCreated())
 			.andExpect(header().string("Location", "http://localhost/api/books/7"))
-			.andExpect(jsonPath("$.id").value(7));
+			.andExpect(jsonPath("$.id").value(7))
+			.andExpect(jsonPath("$.version").value(4));
 
 		verify(service).create(new BookRequest("978-0-13-468599-1", "Effective Java", "Joshua Bloch", "Programming",
-				2018, 3));
+				2018, 3, null));
 	}
 
 	@Test
@@ -139,9 +144,32 @@ class BookControllerTest {
 	void updateReturnsUpdatedBook() throws Exception {
 		when(service.update(eq(7L), any(BookRequest.class))).thenReturn(BOOK);
 
-		mockMvc.perform(put("/api/books/7").contentType(MediaType.APPLICATION_JSON).content(BODY))
+		mockMvc.perform(put("/api/books/7").contentType(MediaType.APPLICATION_JSON).content(UPDATE_BODY))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(7));
+			.andExpect(jsonPath("$.id").value(7))
+			.andExpect(jsonPath("$.version").value(4));
+
+		verify(service).update(7L, new BookRequest("978-0-13-468599-1", "Effective Java", "Joshua Bloch",
+				"Programming", 2018, 3, 4L));
+	}
+
+	@Test
+	void updateWithoutVersionReturns400() throws Exception {
+		mockMvc.perform(put("/api/books/7").contentType(MediaType.APPLICATION_JSON).content(BODY))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.error").value("VALIDATION_FAILED"))
+			.andExpect(jsonPath("$.fieldErrors.version").exists());
+		verifyNoInteractions(service);
+	}
+
+	@Test
+	void updateWithStaleVersionReturns409() throws Exception {
+		when(service.update(eq(7L), any(BookRequest.class)))
+			.thenThrow(new ObjectOptimisticLockingFailureException(Book.class, 7L));
+
+		mockMvc.perform(put("/api/books/7").contentType(MediaType.APPLICATION_JSON).content(UPDATE_BODY))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.error").value("CONCURRENT_UPDATE"));
 	}
 
 	@Test
@@ -149,7 +177,7 @@ class BookControllerTest {
 		when(service.update(eq(7L), any(BookRequest.class)))
 			.thenThrow(new BusinessRuleException("COPIES_ON_LOAN", "Cannot set total copies to 0: 1 copies are on loan"));
 
-		mockMvc.perform(put("/api/books/7").contentType(MediaType.APPLICATION_JSON).content(BODY))
+		mockMvc.perform(put("/api/books/7").contentType(MediaType.APPLICATION_JSON).content(UPDATE_BODY))
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.error").value("COPIES_ON_LOAN"));
 	}

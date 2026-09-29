@@ -14,6 +14,7 @@ import com.library.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,13 +48,18 @@ public class BookService {
 	@Transactional
 	public BookResponse update(Long id, BookRequest request) {
 		Book book = find(id);
+		if (!book.getVersion().equals(request.version())) {
+			// The client edited an out-of-date copy; GlobalExceptionHandler answers 409 CONCURRENT_UPDATE.
+			throw new ObjectOptimisticLockingFailureException(Book.class, id);
+		}
 		String isbn = Book.normaliseIsbn(request.isbn());
 		if (repository.existsByIsbnAndIdNot(isbn, id)) {
 			throw duplicateIsbn(isbn);
 		}
 		book.updateDetails(isbn, request.title(), request.author(), request.category(), request.publishedYear());
 		book.changeTotalCopies(request.totalCopies());
-		return BookResponse.from(book);
+		// Flush now so the response carries the incremented version the client must send next time.
+		return BookResponse.from(repository.saveAndFlush(book));
 	}
 
 	@Transactional

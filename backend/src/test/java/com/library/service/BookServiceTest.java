@@ -27,10 +27,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class BookServiceTest {
+
+	private static final long VERSION = 3L;
 
 	@Mock
 	private BookRepository repository;
@@ -93,9 +96,12 @@ class BookServiceTest {
 		Book book = onLoan(book(7L, 5), 2);
 		when(repository.findById(7L)).thenReturn(Optional.of(book));
 		when(repository.existsByIsbnAndIdNot("030640615X", 7L)).thenReturn(false);
+		when(repository.saveAndFlush(book)).thenReturn(book);
 
 		BookResponse updated = service.update(7L,
-				new BookRequest("0-306-40615-x", "New title", "New author", null, 1999, 4));
+				new BookRequest("0-306-40615-x", "New title", "New author", null, 1999, 4, VERSION));
+
+		verify(repository).saveAndFlush(book);
 
 		assertThat(updated.isbn()).isEqualTo("030640615X");
 		assertThat(updated.title()).isEqualTo("New title");
@@ -105,9 +111,35 @@ class BookServiceTest {
 	}
 
 	@Test
-	void updateKeepingOwnIsbnIsAllowed() {
-		when(repository.findById(7L)).thenReturn(Optional.of(book(7L, 1)));
+	void updateReturnsVersionAfterFlush() {
+		Book book = book(7L, 1);
+		when(repository.findById(7L)).thenReturn(Optional.of(book));
 		when(repository.existsByIsbnAndIdNot("9780134685991", 7L)).thenReturn(false);
+		when(repository.saveAndFlush(book)).thenAnswer(inv -> {
+			ReflectionTestUtils.setField(book, "version", VERSION + 1);
+			return book;
+		});
+
+		assertThat(service.update(7L, request("9780134685991", 1)).version()).isEqualTo(VERSION + 1);
+	}
+
+	@Test
+	void updateWithStaleVersionIsRejectedWithoutChanges() {
+		Book book = book(7L, 1);
+		when(repository.findById(7L)).thenReturn(Optional.of(book));
+		BookRequest stale = new BookRequest("9780134685991", "New title", "J. Bloch", null, 2018, 1, VERSION - 1);
+
+		assertThatThrownBy(() -> service.update(7L, stale)).isInstanceOf(ObjectOptimisticLockingFailureException.class);
+		assertThat(book.getTitle()).isEqualTo("Effective Java");
+		verify(repository, never()).saveAndFlush(any(Book.class));
+	}
+
+	@Test
+	void updateKeepingOwnIsbnIsAllowed() {
+		Book book = book(7L, 1);
+		when(repository.findById(7L)).thenReturn(Optional.of(book));
+		when(repository.existsByIsbnAndIdNot("9780134685991", 7L)).thenReturn(false);
+		when(repository.saveAndFlush(book)).thenReturn(book);
 
 		assertThat(service.update(7L, request("9780134685991", 1)).isbn()).isEqualTo("9780134685991");
 	}
@@ -169,12 +201,13 @@ class BookServiceTest {
 	}
 
 	private static BookRequest request(String isbn, int copies) {
-		return new BookRequest(isbn, "Effective Java", "Joshua Bloch", "Programming", 2018, copies);
+		return new BookRequest(isbn, "Effective Java", "Joshua Bloch", "Programming", 2018, copies, VERSION);
 	}
 
 	private static Book book(Long id, int copies) {
 		Book book = new Book("9780134685991", "Effective Java", "Joshua Bloch", "Programming", 2018, copies);
 		ReflectionTestUtils.setField(book, "id", id);
+		ReflectionTestUtils.setField(book, "version", VERSION);
 		return book;
 	}
 
