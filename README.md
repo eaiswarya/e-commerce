@@ -32,7 +32,8 @@ The `prod` profile uses PostgreSQL and reads its settings from the environment:
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | First admin, created on startup only when no librarians exist (username defaults to `admin`) |
 
 ```bash
-SPRING_PROFILES_ACTIVE=prod DB_URL=jdbc:postgresql://localhost:5432/library DB_USERNAME=library DB_PASSWORD=secret   JWT_SECRET=change-me-to-a-long-random-string-32+ ADMIN_PASSWORD=choose-one ./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=prod DB_URL=jdbc:postgresql://localhost:5432/library DB_USERNAME=library DB_PASSWORD=secret \
+  JWT_SECRET=change-me-to-a-long-random-string-32+ ADMIN_PASSWORD=choose-one ./mvnw spring-boot:run
 ```
 
 ### Authentication
@@ -40,7 +41,8 @@ SPRING_PROFILES_ACTIVE=prod DB_URL=jdbc:postgresql://localhost:5432/library DB_U
 Every `/api/**` endpoint except login needs a Bearer token. In dev the seeded login is `admin` / `admin123`.
 
 ```bash
-TOKEN=$(curl -s -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json'   -d '{"username":"admin","password":"admin123"}' | python -c "import json,sys;print(json.load(sys.stdin)['token'])")
+TOKEN=$(curl -s -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"admin123"}' | python -c "import json,sys;print(json.load(sys.stdin)['token'])")
 curl -s localhost:8080/api/auth/me -H "Authorization: Bearer $TOKEN"
 # {"username":"admin","fullName":"Administrator"}
 ```
