@@ -14,6 +14,9 @@ Design: [`docs/plans/2026-09-28-library-management-design.md`](docs/plans/2026-0
 
 Maven is not required; the backend ships a Maven wrapper.
 
+CI (`.github/workflows/ci.yml`) runs `./mvnw verify` on every pull request to `main` and on every push to `main`;
+the JaCoCo report is attached to each run as the `jacoco-report` artifact.
+
 ## Backend
 
 ```bash

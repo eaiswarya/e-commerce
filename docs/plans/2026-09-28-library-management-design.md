@@ -171,11 +171,11 @@ Each PR is built test-first and shipped with `/testing` → `/pr-review` → `/r
 1. `feature/backend-scaffold` — Spring Boot project, profiles, Flyway, error handling, health check
 2. `feature/auth` — Librarian, JWT, security config, admin seed
 3. `feature/books` — CRUD and search
-4. `feature/members` — CRUD, search, deactivate
-5. `feature/loans` — borrow, return, rules
-6. `feature/frontend-scaffold` — Vite, routing, API client, auth, login page
-7. `feature/frontend-pages` — dashboard, books, members, loans
-8. `chore/ci` — GitHub Actions running backend and frontend checks
+4. `chore/ci` — GitHub Actions running the backend checks on every PR (moved ahead so later PRs are checked automatically)
+5. `feature/members` — CRUD, search, deactivate
+6. `feature/loans` — borrow, return, rules
+7. `feature/frontend-scaffold` — Vite, routing, API client, auth, login page; adds the frontend CI job
+8. `feature/frontend-pages` — dashboard, books, members, loans
 
 ## Out of scope (v1)
 
