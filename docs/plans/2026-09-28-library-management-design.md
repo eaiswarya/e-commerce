@@ -55,7 +55,8 @@ Each feature adds one class per layer it needs (e.g. books: `BookController`, `B
 Constraints and invariants:
 - `CHECK (0 <= available_copies AND available_copies <= total_copies)`
 - `version` columns give optimistic locking; concurrent borrows of the last copy cannot oversell.
-- Books and members with active loans cannot be deleted. Members are deactivated, never hard-deleted, to keep history.
+- Members are deactivated, never hard-deleted, to keep history.
+- A book with copies on loan cannot be deleted (`HAS_ACTIVE_LOANS`). A book that has ever been borrowed cannot be deleted either (`HAS_LOAN_HISTORY`), so members' loan history stays intact. Set its `totalCopies` to 0 to withdraw it.
 
 ## API
 
@@ -82,12 +83,19 @@ All routes under `/api`, JWT required except login. List endpoints are paged (`?
 - Response: `{id, memberCode, fullName, email, phone, active, joinedAt, version}`.
   - `memberCode` is assigned on create from a DB sequence (`M0001`, `M0002`, ...) and never changes.
   - `joinedAt` is the creation instant.
-- `GET /api/members/{id}/loans?status=active|returned|all`: added with the loans PR, because it needs the `loan` table.
+- `GET /api/members/{id}/loans?status=active|overdue|returned|all`: paged, newest first, default `all`; 404 for an unknown member.
 
 ### Loans
-- `POST /api/loans` `{bookId, memberId}` — requires active member, fewer than max active loans, no overdue loans, and an available copy. Decrements `availableCopies`, sets `dueDate = today + periodDays`.
-- `POST /api/loans/{id}/return` — sets `returnedAt`, increments `availableCopies`; rejected if already returned.
-- `GET /api/loans?status=active|overdue|returned&memberId=&bookId=`
+- `POST /api/loans` `{bookId, memberId}` (201 + `Location`)
+  - Checks, in order: member exists (404), book exists (404), member active (`MEMBER_INACTIVE`), no overdue loans (`MEMBER_HAS_OVERDUE`), fewer than `max-active` active loans (`LOAN_LIMIT_REACHED`), a free copy (`NO_COPIES_AVAILABLE`).
+  - Decrements `availableCopies` and sets `dueDate = today + period-days`. "Today" is the UTC date from the injected `Clock`.
+  - The member's row is locked for the transaction, so one member's concurrent borrows can't pass the limit together. Two borrows racing for the last copy are caught by the book's `version`: the loser gets `CONCURRENT_UPDATE`.
+- `POST /api/loans/{id}/return` (200): sets `returnedAt` and increments `availableCopies`. A second return gets `ALREADY_RETURNED`.
+- `GET /api/loans/{id}`
+- `GET /api/loans?status=&memberId=&bookId=`: paged, default sort `borrowedAt,desc`.
+  - `status` is case-insensitive. `active` means not yet returned, overdue included. `overdue` means not returned and due before today. `returned`, and `all` or omitted means no filter. An unknown value gives 400 `BAD_REQUEST`.
+  - A loan due today is not overdue.
+- Response: `{id, bookId, bookTitle, bookIsbn, memberId, memberCode, memberName, borrowedAt, dueDate, returnedAt, status}`, where `status` is `ACTIVE`, `OVERDUE` or `RETURNED` as of today.
 
 Borrow and return each run in one transaction.
 
@@ -106,6 +114,7 @@ Borrow and return each run in one transaction.
 | Member inactive | 409 | `MEMBER_INACTIVE` |
 | Loan already returned | 409 | `ALREADY_RETURNED` |
 | Delete with active loans | 409 | `HAS_ACTIVE_LOANS` |
+| Delete a book that has been borrowed before | 409 | `HAS_LOAN_HISTORY` |
 | Total copies below copies on loan | 409 | `COPIES_ON_LOAN` |
 | Duplicate ISBN / email (including a race caught by the DB unique index) | 409 | `DUPLICATE` |
 | Optimistic lock conflict / stale `version` on update | 409 | `CONCURRENT_UPDATE` |
