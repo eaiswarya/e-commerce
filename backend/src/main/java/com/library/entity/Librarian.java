@@ -5,8 +5,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Librarian {
 
 	@Id
@@ -22,28 +27,9 @@ public class Librarian {
 	@Column(name = "full_name", nullable = false, length = 100)
 	private String fullName;
 
-	protected Librarian() {
-	}
-
 	public Librarian(String username, String passwordHash, String fullName) {
 		this.username = username;
 		this.passwordHash = passwordHash;
 		this.fullName = fullName;
-	}
-
-	public Long getId() {
-		return id;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public String getPasswordHash() {
-		return passwordHash;
-	}
-
-	public String getFullName() {
-		return fullName;
 	}
 }

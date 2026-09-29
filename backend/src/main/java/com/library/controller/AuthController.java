@@ -5,6 +5,7 @@ import com.library.dto.LoginResponse;
 import com.library.dto.MeResponse;
 import com.library.service.AuthService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,13 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
 	private final AuthService authService;
-
-	public AuthController(AuthService authService) {
-		this.authService = authService;
-	}
 
 	@PostMapping("/login")
 	LoginResponse login(@Valid @RequestBody LoginRequest request) {

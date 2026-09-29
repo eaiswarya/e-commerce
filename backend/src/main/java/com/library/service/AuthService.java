@@ -15,9 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
 	private final LibrarianRepository repository;
-
 	private final PasswordEncoder passwordEncoder;
-
 	private final TokenService tokenService;
 
 	/** Checked when the username is unknown, so response time doesn't reveal which usernames exist. */

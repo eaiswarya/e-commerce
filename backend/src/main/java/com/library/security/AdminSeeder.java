@@ -3,8 +3,8 @@ package com.library.security;
 import com.library.config.LibraryProperties;
 import com.library.entity.Librarian;
 import com.library.repository.LibrarianRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,22 +12,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class AdminSeeder implements ApplicationRunner {
 
-	private static final Logger log = LoggerFactory.getLogger(AdminSeeder.class);
-
 	private final LibrarianRepository repository;
-
 	private final PasswordEncoder passwordEncoder;
-
 	private final LibraryProperties properties;
-
-	public AdminSeeder(LibrarianRepository repository, PasswordEncoder passwordEncoder, LibraryProperties properties) {
-		this.repository = repository;
-		this.passwordEncoder = passwordEncoder;
-		this.properties = properties;
-	}
 
 	@Override
 	@Transactional
