@@ -70,6 +70,13 @@ class BookTest {
 		assertThat(book.getPublishedYear()).isEqualTo(2018);
 	}
 
+	@Test
+	void normalisesIsbnByStrippingSeparatorsAndUppercasingX() {
+		assertThat(Book.normaliseIsbn(" 978-0-13\t468599-1 ")).isEqualTo("9780134685991");
+		assertThat(Book.normaliseIsbn("0-306-40615-x")).isEqualTo("030640615X");
+		assertThat(Book.normaliseIsbn(null)).isNull();
+	}
+
 	private static Book book(int copies) {
 		return new Book("9780134685991", "Effective Java", "Joshua Bloch", "Programming", 2018, copies);
 	}

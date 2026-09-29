@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
+import java.util.Locale;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -53,6 +54,11 @@ public class Book {
 		this.publishedYear = publishedYear;
 		this.totalCopies = totalCopies;
 		this.availableCopies = totalCopies;
+	}
+
+	/** Strips hyphens and whitespace and uppercases a trailing ISBN-10 check digit {@code x}. */
+	public static String normaliseIsbn(String isbn) {
+		return (isbn == null) ? null : isbn.replaceAll("[-\\s]", "").toUpperCase(Locale.ROOT);
 	}
 
 	public void updateDetails(String isbn, String title, String author, String category, Integer publishedYear) {
