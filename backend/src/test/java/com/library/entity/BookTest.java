@@ -77,11 +77,41 @@ class BookTest {
 		assertThat(Book.normaliseIsbn(null)).isNull();
 	}
 
+	@Test
+	void borrowingTakesOneAvailableCopy() {
+		Book book = book(2);
+
+		book.borrowCopy();
+
+		assertThat(book.getAvailableCopies()).isEqualTo(1);
+		assertThat(book.getCopiesOnLoan()).isEqualTo(1);
+	}
+
+	@Test
+	void borrowingWithNoFreeCopyIsRejected() {
+		Book book = withOnLoan(book(1), 1);
+
+		assertThatThrownBy(book::borrowCopy).isInstanceOf(BusinessRuleException.class)
+			.extracting("code")
+			.isEqualTo("NO_COPIES_AVAILABLE");
+		assertThat(book.getAvailableCopies()).isZero();
+	}
+
+	@Test
+	void returningPutsTheCopyBack() {
+		Book book = withOnLoan(book(2), 1);
+
+		book.returnCopy();
+
+		assertThat(book.getAvailableCopies()).isEqualTo(2);
+		assertThat(book.hasCopiesOnLoan()).isFalse();
+	}
+
 	private static Book book(int copies) {
 		return new Book("9780134685991", "Effective Java", "Joshua Bloch", "Programming", 2018, copies);
 	}
 
-	/** Loans don't exist yet, so simulate copies on loan by lowering availableCopies directly. */
+	/** Simulates copies on loan by lowering availableCopies directly. */
 	private static Book withOnLoan(Book book, int onLoan) {
 		ReflectionTestUtils.setField(book, "availableCopies", book.getTotalCopies() - onLoan);
 		return book;
