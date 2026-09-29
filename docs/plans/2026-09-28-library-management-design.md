@@ -27,16 +27,21 @@ frontend/  React SPA; Vite dev server proxies /api → :8080
 
 Hibernate runs with `ddl-auto=validate`; Flyway owns the schema.
 
-### Backend packages (by feature)
+### Backend packages (by layer)
 
 ```
 com.library
-├── auth      login, JWT filter, SecurityConfig, Librarian entity
-├── book      Book entity, repository, service, controller, DTOs
-├── member    Member ...
-├── loan      Loan ... (borrow/return rules)
-└── common    GlobalExceptionHandler, ErrorResponse, PageResponse
+├── controller   REST controllers (AuthController, BookController, ...)
+├── service      business logic and rules (AuthService, TokenService, BookService, ...)
+├── repository   Spring Data repositories and Specifications
+├── entity       JPA entities (Librarian, Book, Member, Loan)
+├── dto          request/response records, ErrorResponse, PageResponse
+├── security     SecurityConfig, AdminSeeder
+├── exception    NotFoundException, BusinessRuleException, GlobalExceptionHandler
+└── config       LibraryProperties, TimeConfig
 ```
+
+Each feature adds one class per layer it needs (e.g. books: `BookController`, `BookService`, `BookRepository` + `BookSpecifications`, `Book`, `BookRequest`/`BookResponse`). Lombok removes boilerplate (`@RequiredArgsConstructor`, `@Slf4j`, `@Getter` on entities); DTOs are records.
 
 ## Data model
 
