@@ -15,6 +15,7 @@ import com.library.entity.Book;
 import com.library.exception.BusinessRuleException;
 import com.library.exception.NotFoundException;
 import com.library.repository.BookRepository;
+import com.library.repository.LoanRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,9 @@ class BookServiceTest {
 
 	@Mock
 	private BookRepository repository;
+
+	@Mock
+	private LoanRepository loanRepository;
 
 	@InjectMocks
 	private BookService service;
@@ -190,6 +194,17 @@ class BookServiceTest {
 		assertThatThrownBy(() -> service.delete(7L)).isInstanceOf(BusinessRuleException.class)
 			.extracting("code")
 			.isEqualTo("HAS_ACTIVE_LOANS");
+		verify(repository, never()).delete(any(Book.class));
+	}
+
+	@Test
+	void deleteRejectsBookWithOnlyReturnedLoans() {
+		when(repository.findById(7L)).thenReturn(Optional.of(book(7L, 2)));
+		when(loanRepository.existsByBookId(7L)).thenReturn(true);
+
+		assertThatThrownBy(() -> service.delete(7L)).isInstanceOf(BusinessRuleException.class)
+			.extracting("code")
+			.isEqualTo("HAS_LOAN_HISTORY");
 		verify(repository, never()).delete(any(Book.class));
 	}
 

@@ -79,6 +79,21 @@ public class Book {
 		this.availableCopies = newTotal - onLoan;
 	}
 
+	public void borrowCopy() {
+		if (availableCopies == 0) {
+			throw new BusinessRuleException("NO_COPIES_AVAILABLE", "No copies of '%s' are available".formatted(title));
+		}
+		availableCopies--;
+	}
+
+	/**
+	 * Only called for a loan of this book being returned, so a copy is always on loan here; the table's CHECK
+	 * constraint is the backstop if that is ever broken.
+	 */
+	public void returnCopy() {
+		availableCopies++;
+	}
+
 	public int getCopiesOnLoan() {
 		return totalCopies - availableCopies;
 	}

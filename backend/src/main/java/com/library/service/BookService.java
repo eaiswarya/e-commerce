@@ -11,6 +11,7 @@ import com.library.entity.Book;
 import com.library.exception.BusinessRuleException;
 import com.library.exception.NotFoundException;
 import com.library.repository.BookRepository;
+import com.library.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class BookService {
 
 	private final BookRepository repository;
+
+	private final LoanRepository loanRepository;
 
 	public PageResponse<BookResponse> search(String q, String category, Boolean available, Pageable pageable) {
 		Specification<Book> spec = Specification.allOf(matchesQuery(q), hasCategory(category), isAvailable(available));
@@ -68,6 +71,12 @@ public class BookService {
 		if (book.hasCopiesOnLoan()) {
 			throw new BusinessRuleException("HAS_ACTIVE_LOANS",
 					"Book %d has %d copies on loan".formatted(id, book.getCopiesOnLoan()));
+		}
+		if (loanRepository.existsByBookId(id)) {
+			// Past loans keep the book in members' history; setting totalCopies to 0 withdraws it instead.
+			throw new BusinessRuleException("HAS_LOAN_HISTORY",
+					"Book %d has been borrowed before and is kept for loan history; set its total copies to 0 to withdraw it"
+						.formatted(id));
 		}
 		repository.delete(book);
 	}
