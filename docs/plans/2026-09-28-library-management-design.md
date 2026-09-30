@@ -134,7 +134,7 @@ library:
 
 ## Frontend
 
-React 18, TypeScript, Vite, React Router, TanStack Query, CSS modules with a small shared component set.
+React 18, TypeScript, Vite, React Router (v7, `react-router` package), TanStack Query v5, CSS modules with a small shared component set. Tests: Vitest + React Testing Library. Lint: ESLint + Prettier.
 
 ### Pages
 
@@ -162,7 +162,8 @@ src/
 ```
 
 - Token held in memory and `sessionStorage`.
-- A 401 clears the token and redirects to `/login`.
+- A 401 on a request that carried a token clears the session and redirects to `/login`, returning to the original page after login. A 401 without a token (a wrong password) is shown on the login form instead.
+- `api/errors.ts` turns each error code into a plain-language message; unknown codes show the server message.
 - Every page handles loading, error (with retry) and empty states.
 - Forms validate on the client; API `fieldErrors` map onto fields.
 
