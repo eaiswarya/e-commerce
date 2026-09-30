@@ -1,6 +1,8 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useForm } from 'react-hook-form';
 import { Navigate, useLocation } from 'react-router';
+import { z } from 'zod';
 import { ApiError } from '../../api/client';
 import { errorMessage } from '../../api/errors';
 import { useAuth } from '../../auth/authContext';
@@ -8,34 +10,29 @@ import { ErrorBanner } from '../../components/ErrorBanner';
 import { FormField } from '../../components/FormField';
 import styles from './LoginPage.module.css';
 
-interface Credentials {
-  username: string;
-  password: string;
-}
+const schema = z.object({
+  username: z.string().trim().min(1, 'Enter your username'),
+  password: z.string().min(1, 'Enter your password'),
+});
 
-type FieldErrors = Partial<Record<keyof Credentials, string>>;
-
-function validate({ username, password }: Credentials): FieldErrors {
-  const errors: FieldErrors = {};
-  if (!username.trim()) {
-    errors.username = 'Enter your username';
-  }
-  if (!password) {
-    errors.password = 'Enter your password';
-  }
-  return errors;
-}
+type Credentials = z.infer<typeof schema>;
 
 export function LoginPage() {
   const { isAuthenticated, login } = useAuth();
   const location = useLocation();
-  const [credentials, setCredentials] = useState<Credentials>({ username: '', password: '' });
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm<Credentials>({ resolver: zodResolver(schema), defaultValues: { username: '', password: '' } });
   const mutation = useMutation({
-    mutationFn: ({ username, password }: Credentials) => login(username.trim(), password),
+    mutationFn: ({ username, password }: Credentials) => login(username, password),
     onError: (error) => {
       if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors);
+        Object.entries(error.fieldErrors).forEach(([field, message]) =>
+          setError(field as keyof Credentials, { message }),
+        );
       }
     },
   });
@@ -46,40 +43,23 @@ export function LoginPage() {
     return <Navigate to={from && from !== '/login' ? from : '/'} replace />;
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const errors = validate(credentials);
-    setFieldErrors(errors);
-    if (Object.keys(errors).length === 0) {
-      mutation.mutate(credentials);
-    }
-  }
-
-  function update(field: keyof Credentials, value: string) {
-    setCredentials((current) => ({ ...current, [field]: value }));
-  }
-
   return (
     <main className={styles.page}>
-      <form className={styles.card} onSubmit={handleSubmit} noValidate>
+      <form className={styles.card} onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
         <h1 className={styles.title}>Library sign in</h1>
         {mutation.isError && <ErrorBanner message={errorMessage(mutation.error)} />}
         <FormField
           label="Username"
-          name="username"
           autoComplete="username"
-          value={credentials.username}
-          error={fieldErrors.username}
-          onChange={(event) => update('username', event.target.value)}
+          error={errors.username?.message}
+          {...register('username')}
         />
         <FormField
           label="Password"
-          name="password"
           type="password"
           autoComplete="current-password"
-          value={credentials.password}
-          error={fieldErrors.password}
-          onChange={(event) => update('password', event.target.value)}
+          error={errors.password?.message}
+          {...register('password')}
         />
         <button type="submit" className={styles.submit} disabled={mutation.isPending}>
           {mutation.isPending ? 'Signing in…' : 'Sign in'}

@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes } from 'react';
+import { forwardRef, useId, type InputHTMLAttributes } from 'react';
 import styles from './FormField.module.css';
 
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -6,8 +6,14 @@ interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
-/** A labelled input; an error is announced with the field and linked to it for screen readers. */
-export function FormField({ label, error, id, ...inputProps }: FormFieldProps) {
+/**
+ * A labelled input; an error is announced with the field and linked to it for screen readers. Forwards its ref so
+ * react-hook-form's {@code register()} can be spread onto it.
+ */
+export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormField(
+  { label, error, id, ...inputProps },
+  ref,
+) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const errorId = `${inputId}-error`;
@@ -17,6 +23,7 @@ export function FormField({ label, error, id, ...inputProps }: FormFieldProps) {
         {label}
       </label>
       <input
+        ref={ref}
         id={inputId}
         className={styles.input}
         aria-invalid={error ? true : undefined}
@@ -30,4 +37,4 @@ export function FormField({ label, error, id, ...inputProps }: FormFieldProps) {
       )}
     </div>
   );
-}
+});

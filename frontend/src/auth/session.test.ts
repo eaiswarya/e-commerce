@@ -20,6 +20,13 @@ describe('session storage', () => {
     expect(loadSession(NOW)).toEqual(SESSION);
   });
 
+  it('accepts the API expiry format with nanosecond precision', () => {
+    const fromApi = { ...SESSION, expiresAt: '2026-09-30T18:00:00.405071600Z' };
+    saveSession(fromApi);
+
+    expect(loadSession(NOW)).toEqual(fromApi);
+  });
+
   it('drops an expired session', () => {
     saveSession(SESSION);
 

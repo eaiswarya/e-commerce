@@ -1,10 +1,14 @@
+import { z } from 'zod';
+
+const sessionSchema = z.object({
+  token: z.string(),
+  expiresAt: z.iso.datetime({ offset: true }),
+  username: z.string(),
+  fullName: z.string(),
+});
+
 /** The logged-in librarian, kept in sessionStorage so a reload stays logged in but closing the tab logs out. */
-export interface Session {
-  token: string;
-  expiresAt: string;
-  username: string;
-  fullName: string;
-}
+export type Session = z.infer<typeof sessionSchema>;
 
 const KEY = 'library.session';
 
@@ -15,15 +19,9 @@ export function loadSession(now: number = Date.now()): Session | null {
     if (!raw) {
       return null;
     }
-    const session = JSON.parse(raw) as Partial<Session>;
-    if (
-      typeof session.token === 'string' &&
-      typeof session.username === 'string' &&
-      typeof session.fullName === 'string' &&
-      typeof session.expiresAt === 'string' &&
-      Date.parse(session.expiresAt) > now
-    ) {
-      return session as Session;
+    const parsed = sessionSchema.safeParse(JSON.parse(raw));
+    if (parsed.success && Date.parse(parsed.data.expiresAt) > now) {
+      return parsed.data;
     }
   } catch {
     // Corrupt JSON or storage unavailable: treat as logged out.
