@@ -1,0 +1,2 @@
+# Prettier checks for LF endings, so keep LF on Windows checkouts too (core.autocrlf would convert to CRLF).
+* text=auto eol=lf
