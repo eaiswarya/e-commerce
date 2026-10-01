@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link } from 'react-router';
 import { searchMembers, type MemberSearch } from '../../api/members';
 import { queryKeys } from '../../api/queryKeys';
 import { Badge } from '../../components/Badge';
@@ -10,6 +10,7 @@ import { Pagination } from '../../components/Pagination';
 import { QueryState } from '../../components/QueryState';
 import { SearchInput } from '../../components/SearchInput';
 import type { Member } from '../../types';
+import { useListParams } from '../useListParams';
 import { MemberFormDialog } from './MemberFormDialog';
 
 const columns: Column<Member>[] = [
@@ -28,12 +29,12 @@ const columns: Column<Member>[] = [
 const STATUS: Record<string, boolean | undefined> = { active: true, inactive: false };
 
 export function MembersPage() {
-  const [params, setParams] = useSearchParams();
+  const { params, page: pageNumber, update, setPage } = useListParams();
   const status = params.get('status') ?? 'all';
   const search: MemberSearch = {
     q: params.get('q') ?? '',
     active: STATUS[status],
-    page: Number(params.get('page') ?? 0),
+    page: pageNumber,
   };
   const [adding, setAdding] = useState(false);
   const query = useQuery({
@@ -41,18 +42,6 @@ export function MembersPage() {
     queryFn: ({ signal }) => searchMembers(search, signal),
     placeholderData: keepPreviousData,
   });
-
-  function update(changes: Record<string, string | null>) {
-    setParams((current) => {
-      const next = new URLSearchParams(current);
-      for (const [key, value] of Object.entries(changes)) {
-        if (value) next.set(key, value);
-        else next.delete(key);
-      }
-      if (!('page' in changes)) next.delete('page');
-      return next;
-    });
-  }
 
   const filtered = Boolean(search.q) || status !== 'all';
 
@@ -100,11 +89,7 @@ export function MembersPage() {
               rows={page.content}
               rowKey={(member) => member.id}
             />
-            <Pagination
-              page={page.page}
-              totalPages={page.totalPages}
-              onChange={(next) => update({ page: next > 0 ? String(next) : null })}
-            />
+            <Pagination page={page.page} totalPages={page.totalPages} onChange={setPage} />
           </>
         )}
       </QueryState>

@@ -108,6 +108,17 @@ describe('BooksPage', () => {
     expect(screen.getByRole('checkbox', { name: 'Available only' })).toBeChecked();
   });
 
+  it.each(['abc', '-1', '1.5x'])(
+    'treats a bad page number in the URL (%s) as the first page',
+    async (bad) => {
+      vi.mocked(searchBooks).mockResolvedValue(page([DUNE]));
+      renderPage(`/books?page=${bad}`);
+
+      await screen.findByRole('table');
+      expect(lastSearch()).toMatchObject({ page: bad === '1.5x' ? 1 : 0 });
+    },
+  );
+
   it('searches as the librarian types and starts again from the first page', async () => {
     vi.mocked(searchBooks).mockResolvedValue(page([DUNE]));
     renderPage('/books?page=3');
