@@ -89,3 +89,18 @@ async function toApiError(response: Response): Promise<ApiError> {
   }
   return new ApiError(response.status, `HTTP_${response.status}`, response.statusText || 'Request failed');
 }
+
+export type QueryValue = string | number | boolean | null | undefined;
+
+/** Builds {@code ?a=1&b=x}, leaving out null, undefined and blank values; returns '' when nothing is left. */
+export function toQuery(params: Record<string, QueryValue>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+      continue;
+    }
+    search.set(key, String(typeof value === 'string' ? value.trim() : value));
+  }
+  const query = search.toString();
+  return query ? `?${query}` : '';
+}
