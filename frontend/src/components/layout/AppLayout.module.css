@@ -1,62 +1,194 @@
 .shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
 }
 
-.header {
+.sidebar {
+  position: sticky;
+  top: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100vh;
+  padding: 1.25rem 0.875rem;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0 0.5rem;
+  font-size: 1.0625rem;
   font-weight: 700;
-  font-size: 1.125rem;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.logo svg {
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 .nav {
   display: flex;
-  gap: 0.25rem;
-  margin-right: auto;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
 .link {
-  padding: 0.375rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.625rem;
   border-radius: var(--radius);
-  color: var(--color-text);
-  text-decoration: none;
+  color: var(--text-secondary);
+  font-weight: 550;
 }
 
 .link:hover {
-  background: var(--color-bg);
+  background: var(--surface-muted);
+  color: var(--text);
+  text-decoration: none;
 }
 
 .link[aria-current='page'] {
-  background: var(--color-bg);
-  color: var(--color-primary);
-  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.linkIcon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
 }
 
 .account {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  color: var(--color-muted);
+  gap: 0.625rem;
+  margin-top: auto;
+  padding: 0.75rem 0.5rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.name {
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.username {
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
 }
 
 .logout {
-  padding: 0.25rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: transparent;
-  cursor: pointer;
+  padding: 0 0.5rem;
+}
+
+.logoutText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .content {
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 1.5rem;
+  width: 100%;
+  max-width: 76rem;
+  padding: 2rem 2.5rem 3rem;
+}
+
+/* Small screens: the sidebar becomes a top bar with a scrollable row of links. */
+@media (max-width: 900px) {
+  .shell {
+    /* minmax(0, ...) stops the nav row's width from stretching the page past the screen. */
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: sticky;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    grid-template-areas:
+      'brand account'
+      'nav nav';
+    gap: 0.75rem;
+    height: auto;
+    padding: 0.75rem 1rem 0.5rem;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    grid-area: brand;
+    padding: 0;
+  }
+
+  .account {
+    grid-area: account;
+    justify-self: end;
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .who {
+    display: none;
+  }
+
+  .nav {
+    grid-area: nav;
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .link {
+    flex: none;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.9rem;
+  }
+
+  .content {
+    padding: 1.25rem 1rem 2.5rem;
+  }
 }
