@@ -19,4 +19,10 @@ describe('ErrorBanner', () => {
 
     expect(onRetry).toHaveBeenCalledOnce();
   });
+
+  it('can label the action for the situation', () => {
+    render(<ErrorBanner message="Changed elsewhere" onRetry={vi.fn()} retryLabel="Reload latest" />);
+
+    expect(screen.getByRole('button', { name: 'Reload latest' })).toBeInTheDocument();
+  });
 });

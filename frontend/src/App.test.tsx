@@ -1,9 +1,16 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from './App';
+import { searchBooks } from './api/books';
+import { searchMembers } from './api/members';
 import { saveSession } from './auth/session';
 import { renderWithProviders } from './test/render';
+
+vi.mock('./api/books', () => ({ searchBooks: vi.fn() }));
+vi.mock('./api/members', () => ({ searchMembers: vi.fn() }));
+
+const emptyPage = { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
 
 function signInAsAdmin() {
   saveSession({
@@ -44,5 +51,17 @@ describe('App', () => {
     renderWithProviders(<App />, { route: '/nowhere' });
 
     expect(screen.getByText('Page not found.')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['/books', 'Books', searchBooks],
+    ['/members', 'Members', searchMembers],
+  ])('routes %s to its page', async (route, heading, search) => {
+    vi.mocked(search).mockResolvedValue(emptyPage);
+    signInAsAdmin();
+
+    renderWithProviders(<App />, { route });
+
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
   });
 });

@@ -166,6 +166,10 @@ src/
 - `api/errors.ts` turns each error code into a plain-language message; unknown codes show the server message.
 - Every page handles loading, error (with retry) and empty states.
 - Forms validate on the client; API `fieldErrors` map onto fields.
+- List filters and the page number live in the URL (`?q=&page=`), so reload and Back keep them; a filter change returns to page 1.
+- Edit forms send the `version` they loaded. On 409 `CONCURRENT_UPDATE` the form offers "Reload latest", which loads the current record and its new `version` into the form (the user's unsaved edits are replaced, and the form says so).
+- After a write, the detail cache is updated from the response and only list searches are refetched.
+- Dialogs use Radix Dialog (focus trap, Esc, labelled by title); forms use react-hook-form + zod schemas that mirror the API's validation.
 
 ## Testing
 
