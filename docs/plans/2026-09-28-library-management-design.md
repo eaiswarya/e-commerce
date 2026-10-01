@@ -150,6 +150,12 @@ React 18, TypeScript, Vite, React Router (v7, `react-router` package), TanStack 
 
 **Borrow flow:** pick member (searchable) → pick book (searchable, available only) → confirm. A 409 is shown as a plain-language message.
 
+### Look and feel
+
+- Design tokens (colour, spacing, radius, shadow) live in `styles/global.css`; components use only those variables. Dark mode follows the system setting.
+- Inter (self-hosted via `@fontsource-variable/inter`), `lucide-react` icons, `sonner` toasts confirming every add, edit, delete, deactivate, lend and return.
+- Left sidebar navigation that becomes a top bar under 900px; split-screen sign-in page.
+
 ### Layout
 
 ```
