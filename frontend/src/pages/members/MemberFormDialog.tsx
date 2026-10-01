@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import { ApiError } from '../../api/client';
 import { errorMessage } from '../../api/errors';
@@ -68,6 +69,7 @@ function MemberForm({ member, onDone }: { member?: Member; onDone: () => void })
     onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.member(saved.id), saved);
       void queryClient.invalidateQueries({ queryKey: queryKeys.memberSearches });
+      toast.success(member ? 'Changes saved' : `${saved.fullName} added as ${saved.memberCode}`);
       onDone();
     },
     onError: (error) => {
@@ -119,26 +121,29 @@ function MemberForm({ member, onDone }: { member?: Member; onDone: () => void })
           Loaded the latest version of this member. Your unsaved changes were replaced; edit and save again.
         </p>
       )}
-      <FormField
-        label="Full name"
-        autoComplete="off"
-        error={errors.fullName?.message}
-        {...register('fullName')}
-      />
-      <FormField
-        label="Email"
-        type="email"
-        autoComplete="off"
-        error={errors.email?.message}
-        {...register('email')}
-      />
-      <FormField
-        label="Phone"
-        type="tel"
-        autoComplete="off"
-        error={errors.phone?.message}
-        {...register('phone')}
-      />
+      <div className="form-grid">
+        <FormField
+          label="Full name"
+          wide
+          autoComplete="off"
+          error={errors.fullName?.message}
+          {...register('fullName')}
+        />
+        <FormField
+          label="Email"
+          type="email"
+          autoComplete="off"
+          error={errors.email?.message}
+          {...register('email')}
+        />
+        <FormField
+          label="Phone"
+          type="tel"
+          autoComplete="off"
+          error={errors.phone?.message}
+          {...register('phone')}
+        />
+      </div>
       <div className="actions">
         <button type="button" className="btn" onClick={onDone}>
           Cancel

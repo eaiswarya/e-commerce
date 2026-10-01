@@ -79,6 +79,7 @@ describe('MemberDetailPage', () => {
     );
     expect(screen.queryByRole('button', { name: 'Deactivate' })).not.toBeInTheDocument();
     expect(deactivateMember).toHaveBeenCalledWith(7);
+    expect(await screen.findByText('Ada Lovelace deactivated')).toBeInTheDocument();
   });
 
   it('does not offer deactivation for an inactive member', async () => {

@@ -82,6 +82,7 @@ describe('BookFormDialog', () => {
     });
     expect(onSaved).toHaveBeenCalledWith(BOOK);
     expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(await screen.findByText('“Effective Java” added to the catalogue')).toBeInTheDocument();
   });
 
   it('edits a book, sending the version it was loaded with', async () => {
@@ -101,6 +102,7 @@ describe('BookFormDialog', () => {
       totalCopies: 3,
       version: 4,
     });
+    expect(await screen.findByText('Changes saved')).toBeInTheDocument();
   });
 
   it('shows the API field errors on their fields', async () => {

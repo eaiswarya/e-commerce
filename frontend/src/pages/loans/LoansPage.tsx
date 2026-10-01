@@ -1,4 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { BookUp } from 'lucide-react';
 import { useState } from 'react';
 import { searchLoans, type LoanFilter, type LoanSearch } from '../../api/loans';
 import { queryKeys } from '../../api/queryKeys';
@@ -31,23 +32,28 @@ export function LoansPage() {
   return (
     <section>
       <div className="page-header">
-        <h1>Loans</h1>
+        <div>
+          <h1>Loans</h1>
+          <p className="page-subtitle">What is out, what is late, and what came back.</p>
+        </div>
         <button type="button" className="btn btn-primary" onClick={() => setLending(true)}>
+          <BookUp />
           Lend a book
         </button>
       </div>
-      <div className="toolbar" role="group" aria-label="Show loans">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            className={f === filter ? 'btn btn-primary' : 'btn'}
-            aria-pressed={f === filter}
-            onClick={() => update({ status: f.value === 'active' ? null : f.value })}
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="toolbar">
+        <div className="segmented" role="group" aria-label="Show loans">
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              type="button"
+              aria-pressed={f === filter}
+              onClick={() => update({ status: f.value === 'active' ? null : f.value })}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
       <QueryState
         query={query}

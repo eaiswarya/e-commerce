@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { BookUp, ChevronLeft, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
 import { deleteBook, getBook } from '../../api/books';
 import { queryKeys } from '../../api/queryKeys';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -21,6 +23,7 @@ export function BookDetailPage() {
   const remove = useMutation({
     mutationFn: () => deleteBook(id),
     onSuccess: () => {
+      toast.success(`“${query.data?.title}” deleted`);
       queryClient.removeQueries({ queryKey: queryKeys.book(id) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.bookSearches });
       navigate('/books', { replace: true });
@@ -29,9 +32,9 @@ export function BookDetailPage() {
 
   return (
     <section>
-      <p>
-        <Link to="/books">← All books</Link>
-      </p>
+      <Link to="/books" className="back-link">
+        <ChevronLeft size={16} /> All books
+      </Link>
       <QueryState
         query={query}
         notFound={
@@ -44,14 +47,19 @@ export function BookDetailPage() {
         {(book) => (
           <>
             <div className="page-header">
-              <h1>{book.title}</h1>
+              <div>
+                <h1>{book.title}</h1>
+                <p className="page-subtitle">by {book.author}</p>
+              </div>
               <div className="header-actions">
                 {book.availableCopies > 0 && (
                   <button type="button" className="btn btn-primary" onClick={() => setLending(true)}>
+                    <BookUp />
                     Lend this book
                   </button>
                 )}
                 <button type="button" className="btn" onClick={() => setEditing(true)}>
+                  <Pencil />
                   Edit
                 </button>
                 <button
@@ -62,23 +70,34 @@ export function BookDetailPage() {
                     setDeleting(true);
                   }}
                 >
+                  <Trash2 />
                   Delete
                 </button>
               </div>
             </div>
-            <dl className="details">
-              <dt>Author</dt>
-              <dd>{book.author}</dd>
-              <dt>ISBN</dt>
-              <dd>{book.isbn}</dd>
-              <dt>Category</dt>
-              <dd>{book.category ?? '—'}</dd>
-              <dt>Published</dt>
-              <dd>{book.publishedYear ?? '—'}</dd>
-              <dt>Copies available</dt>
-              <dd>
-                {book.availableCopies} of {book.totalCopies}
-              </dd>
+            <dl className="details card">
+              <div>
+                <dt>Author</dt>
+                <dd>{book.author}</dd>
+              </div>
+              <div>
+                <dt>ISBN</dt>
+                <dd>{book.isbn}</dd>
+              </div>
+              <div>
+                <dt>Category</dt>
+                <dd>{book.category ?? '—'}</dd>
+              </div>
+              <div>
+                <dt>Published</dt>
+                <dd>{book.publishedYear ?? '—'}</dd>
+              </div>
+              <div>
+                <dt>Copies available</dt>
+                <dd>
+                  {book.availableCopies} of {book.totalCopies}
+                </dd>
+              </div>
             </dl>
             <BookLoans bookId={book.id} />
             <BookFormDialog open={editing} onOpenChange={setEditing} book={book} />

@@ -7,6 +7,7 @@ import { borrowBook } from '../../api/loans';
 import { searchMembers } from '../../api/members';
 import { BOOK, LOAN, MEMBER, pageOf } from '../../test/fixtures';
 import { renderWithProviders } from '../../test/render';
+import { formatDate } from '../../utils/dates';
 import { BorrowDialog } from './BorrowDialog';
 
 vi.mock('../../api/books', () => ({ searchBooks: vi.fn() }));
@@ -81,6 +82,8 @@ describe('BorrowDialog', () => {
 
     expect(borrowBook).toHaveBeenCalledWith(3, 7);
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(await screen.findByText('“Dune” lent to Ada Lovelace')).toBeInTheDocument();
+    expect(screen.getByText(`Due back ${formatDate(LOAN.dueDate)}`)).toBeInTheDocument();
   });
 
   it('starts with the member from the member page and asks only for the book', async () => {

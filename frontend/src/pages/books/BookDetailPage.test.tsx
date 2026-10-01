@@ -90,6 +90,7 @@ describe('BookDetailPage', () => {
 
     expect(await screen.findByText('Books list')).toBeInTheDocument();
     expect(deleteBook).toHaveBeenCalledWith(7);
+    expect(await screen.findByText('“Effective Java” deleted')).toBeInTheDocument();
   });
 
   it('explains why a borrowed book cannot be deleted', async () => {

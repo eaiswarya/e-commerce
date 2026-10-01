@@ -23,27 +23,35 @@ export function MemberLoans({ memberId }: { memberId: number }) {
 
   return (
     <>
-      <h2 className="section-title">On loan</h2>
-      <QueryState
-        query={current}
-        isEmpty={(page) => page.content.length === 0}
-        empty={<EmptyState message="Nothing on loan." />}
-      >
-        {(page) => <LoansTable caption="On loan" loans={page.content} hide="member" />}
-      </QueryState>
-      <h2 className="section-title">History</h2>
-      <QueryState
-        query={history}
-        isEmpty={(page) => page.content.length === 0}
-        empty={<EmptyState message="No returned books yet." />}
-      >
-        {(page) => (
-          <>
-            <LoansTable caption="History" loans={page.content} hide="member" />
-            <Pagination page={page.page} totalPages={page.totalPages} onChange={setHistoryPage} />
-          </>
-        )}
-      </QueryState>
+      <div className="section">
+        <div className="section-header">
+          <h2 className="section-title">On loan</h2>
+        </div>
+        <QueryState
+          query={current}
+          isEmpty={(page) => page.content.length === 0}
+          empty={<EmptyState message="Nothing on loan." />}
+        >
+          {(page) => <LoansTable caption="On loan" loans={page.content} hide="member" />}
+        </QueryState>
+      </div>
+      <div className="section">
+        <div className="section-header">
+          <h2 className="section-title">History</h2>
+        </div>
+        <QueryState
+          query={history}
+          isEmpty={(page) => page.content.length === 0}
+          empty={<EmptyState message="No returned books yet." />}
+        >
+          {(page) => (
+            <>
+              <LoansTable caption="History" loans={page.content} hide="member" />
+              <Pagination page={page.page} totalPages={page.totalPages} onChange={setHistoryPage} />
+            </>
+          )}
+        </QueryState>
+      </div>
     </>
   );
 }

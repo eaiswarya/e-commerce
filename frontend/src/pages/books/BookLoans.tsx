@@ -17,8 +17,10 @@ export function BookLoans({ bookId }: { bookId: number }) {
   });
 
   return (
-    <>
-      <h2 className="section-title">On loan now</h2>
+    <div className="section">
+      <div className="section-header">
+        <h2 className="section-title">On loan now</h2>
+      </div>
       <QueryState
         query={query}
         isEmpty={(result) => result.content.length === 0}
@@ -31,6 +33,6 @@ export function BookLoans({ bookId }: { bookId: number }) {
           </>
         )}
       </QueryState>
-    </>
+    </div>
   );
 }
