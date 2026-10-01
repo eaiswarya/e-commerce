@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './Pagination.module.css';
 
 interface PaginationProps {
@@ -13,25 +14,24 @@ export function Pagination({ page, totalPages, onChange }: PaginationProps) {
   }
   return (
     <nav className={styles.pagination} aria-label="Pagination">
-      <button
-        type="button"
-        className={styles.button}
-        disabled={page === 0}
-        onClick={() => onChange(page - 1)}
-      >
-        Previous
-      </button>
-      <span>
+      <span className={styles.status}>
         Page {page + 1} of {totalPages}
       </span>
-      <button
-        type="button"
-        className={styles.button}
-        disabled={page >= totalPages - 1}
-        onClick={() => onChange(page + 1)}
-      >
-        Next
-      </button>
+      <div className={styles.buttons}>
+        <button type="button" className="btn btn-sm" disabled={page === 0} onClick={() => onChange(page - 1)}>
+          <ChevronLeft />
+          Previous
+        </button>
+        <button
+          type="button"
+          className="btn btn-sm"
+          disabled={page >= totalPages - 1}
+          onClick={() => onChange(page + 1)}
+        >
+          Next
+          <ChevronRight />
+        </button>
+      </div>
     </nav>
   );
 }

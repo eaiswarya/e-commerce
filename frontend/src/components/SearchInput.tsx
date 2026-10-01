@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import styles from './SearchInput.module.css';
 
@@ -32,12 +33,14 @@ export function SearchInput({ label, value, onSearch, placeholder, delayMs = 300
 
   return (
     <label className={styles.search}>
-      <span className={styles.label}>{label}</span>
+      {/* The label stays for screen readers; sighted users see the placeholder and the search icon. */}
+      <span className="visually-hidden">{label}</span>
+      <Search className={styles.icon} />
       <input
         type="search"
         className={styles.input}
         value={text}
-        placeholder={placeholder}
+        placeholder={placeholder ?? label}
         onChange={(event) => handleChange(event.target.value)}
       />
     </label>

@@ -1,3 +1,4 @@
+import { CircleAlert } from 'lucide-react';
 import styles from './ErrorBanner.module.css';
 
 interface ErrorBannerProps {
@@ -10,9 +11,10 @@ interface ErrorBannerProps {
 export function ErrorBanner({ message, onRetry, retryLabel = 'Retry' }: ErrorBannerProps) {
   return (
     <div role="alert" className={styles.banner}>
-      <span>{message}</span>
+      <CircleAlert className={styles.icon} />
+      <span className={styles.message}>{message}</span>
       {onRetry && (
-        <button type="button" className={styles.retry} onClick={onRetry}>
+        <button type="button" className="btn btn-sm" onClick={onRetry}>
           {retryLabel}
         </button>
       )}

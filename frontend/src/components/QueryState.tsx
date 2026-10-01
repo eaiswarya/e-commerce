@@ -1,4 +1,5 @@
 import type { UseQueryResult } from '@tanstack/react-query';
+import { LoaderCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ApiError } from '../api/client';
 import { errorMessage } from '../api/errors';
@@ -18,7 +19,12 @@ interface QueryStateProps<T> {
 /** The loading, error (with Retry), empty and loaded states every data view needs, in one place. */
 export function QueryState<T>({ query, empty, isEmpty, notFound, children }: QueryStateProps<T>) {
   if (query.isPending) {
-    return <p role="status">Loading…</p>;
+    return (
+      <p role="status" className="loading">
+        <LoaderCircle className="spin" />
+        Loading…
+      </p>
+    );
   }
   if (query.isError && notFound && query.error instanceof ApiError && query.error.status === 404) {
     return <>{notFound}</>;
