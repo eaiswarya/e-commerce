@@ -6,14 +6,18 @@ import { queryKeys } from '../../api/queryKeys';
 import { Badge } from '../../components/Badge';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
+import { BorrowDialog } from '../../components/loans/BorrowDialog';
 import { QueryState } from '../../components/QueryState';
+import { formatDateTime } from '../../utils/dates';
 import { MemberFormDialog } from './MemberFormDialog';
+import { MemberLoans } from './MemberLoans';
 
 export function MemberDetailPage() {
   const id = Number(useParams().id);
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
+  const [lending, setLending] = useState(false);
   const query = useQuery({ queryKey: queryKeys.member(id), queryFn: ({ signal }) => getMember(id, signal) });
   const deactivate = useMutation({
     mutationFn: () => deactivateMember(id),
@@ -43,6 +47,11 @@ export function MemberDetailPage() {
                 {member.active ? <Badge tone="success">Active</Badge> : <Badge tone="muted">Inactive</Badge>}
               </h1>
               <div className="header-actions">
+                {member.active && (
+                  <button type="button" className="btn btn-primary" onClick={() => setLending(true)}>
+                    Lend a book
+                  </button>
+                )}
                 <button type="button" className="btn" onClick={() => setEditing(true)}>
                   Edit
                 </button>
@@ -68,9 +77,11 @@ export function MemberDetailPage() {
               <dt>Phone</dt>
               <dd>{member.phone ?? '—'}</dd>
               <dt>Joined</dt>
-              <dd>{new Date(member.joinedAt).toLocaleDateString()}</dd>
+              <dd>{formatDateTime(member.joinedAt)}</dd>
             </dl>
+            <MemberLoans memberId={member.id} />
             <MemberFormDialog open={editing} onOpenChange={setEditing} member={member} />
+            <BorrowDialog open={lending} onOpenChange={setLending} member={member} />
             <ConfirmDialog
               open={deactivating}
               onOpenChange={setDeactivating}
