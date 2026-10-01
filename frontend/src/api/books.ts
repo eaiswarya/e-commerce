@@ -7,10 +7,11 @@ export interface BookSearch {
   /** Only {@code true} filters; {@code false} means "all books", as in the API. */
   available?: boolean;
   page?: number;
+  size?: number;
 }
 
-export function searchBooks({ q, category, available, page }: BookSearch, signal?: AbortSignal) {
-  const query = toQuery({ q, category, available: available || undefined, page: page || undefined });
+export function searchBooks({ q, category, available, page, size }: BookSearch, signal?: AbortSignal) {
+  const query = toQuery({ q, category, available: available || undefined, page: page || undefined, size });
   return apiFetch<PageResponse<Book>>(`/api/books${query}`, { signal });
 }
 

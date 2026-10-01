@@ -68,3 +68,21 @@ export interface MemberInput {
   phone: string | null;
   version?: number;
 }
+
+/** A loan's state today; ALL is only a search filter. */
+export type LoanStatus = 'ACTIVE' | 'OVERDUE' | 'RETURNED';
+
+export interface Loan {
+  id: number;
+  bookId: number;
+  bookTitle: string;
+  bookIsbn: string;
+  memberId: number;
+  memberCode: string;
+  memberName: string;
+  borrowedAt: string;
+  /** A calendar date (YYYY-MM-DD) with no time zone. */
+  dueDate: string;
+  returnedAt: string | null;
+  status: LoanStatus;
+}
