@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
+import { ArrowLeftRight, BookOpen, Library, Users } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Navigate, useLocation } from 'react-router';
 import { z } from 'zod';
@@ -45,8 +46,32 @@ export function LoginPage() {
 
   return (
     <main className={styles.page}>
+      <section className={styles.brand} aria-hidden="true">
+        <div className={styles.brandName}>
+          <span className={styles.logo}>
+            <Library />
+          </span>
+          Library
+        </div>
+        <div>
+          <p className={styles.tagline}>Everything the front desk needs, in one place.</p>
+          <ul className={styles.features}>
+            <li>
+              <BookOpen /> Catalogue with live copy counts
+            </li>
+            <li>
+              <Users /> Member records and loan history
+            </li>
+            <li>
+              <ArrowLeftRight /> Lending, returns and overdue tracking
+            </li>
+          </ul>
+        </div>
+        <p className={styles.footnote}>Staff access only</p>
+      </section>
       <form className={styles.card} onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
         <h1 className={styles.title}>Library sign in</h1>
+        <p className={styles.subtitle}>Use your librarian account to continue.</p>
         {mutation.isError && <ErrorBanner message={errorMessage(mutation.error)} />}
         <FormField
           label="Username"
@@ -61,7 +86,7 @@ export function LoginPage() {
           error={errors.password?.message}
           {...register('password')}
         />
-        <button type="submit" className={styles.submit} disabled={mutation.isPending}>
+        <button type="submit" className={`btn btn-primary ${styles.submit}`} disabled={mutation.isPending}>
           {mutation.isPending ? 'Signing in…' : 'Sign in'}
         </button>
       </form>

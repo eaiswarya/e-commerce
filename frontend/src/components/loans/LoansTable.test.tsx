@@ -52,6 +52,7 @@ describe('LoansTable', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Return Dune from Ada Lovelace' }));
 
     expect(returnLoan).toHaveBeenCalledWith(11);
+    expect(await screen.findByText('“Dune” returned')).toBeInTheDocument();
   });
 
   it('explains a failed return', async () => {

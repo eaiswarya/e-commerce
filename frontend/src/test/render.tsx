@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, type RenderResult } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { MemoryRouter, type InitialEntry } from 'react-router';
+import { Toaster } from 'sonner';
 import { AuthProvider } from '../auth/AuthProvider';
 
 /** Renders {@code ui} inside the app's providers, starting at {@code route} (a path, or a path with state). */
@@ -15,7 +16,10 @@ export function renderWithProviders(
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[route]}>
-        <AuthProvider>{ui}</AuthProvider>
+        <AuthProvider>
+          {ui}
+          <Toaster />
+        </AuthProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   );

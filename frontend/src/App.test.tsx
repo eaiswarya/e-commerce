@@ -39,7 +39,7 @@ describe('App', () => {
     renderWithProviders(<App />, { route: '/' });
 
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
-    expect(screen.getByText('Signed in as Administrator')).toBeInTheDocument();
+    expect(screen.getByText(/Welcome back, Administrator/)).toBeInTheDocument();
   });
 
   it('logs out back to the login page', async () => {

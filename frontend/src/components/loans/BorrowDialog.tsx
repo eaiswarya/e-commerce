@@ -1,11 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { BookUp } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { searchBooks } from '../../api/books';
 import { errorMessage } from '../../api/errors';
 import { borrowBook } from '../../api/loans';
 import { searchMembers } from '../../api/members';
 import { queryKeys } from '../../api/queryKeys';
 import type { Book, Member } from '../../types';
+import { formatDate } from '../../utils/dates';
 import { ErrorBanner } from '../ErrorBanner';
 import { Modal } from '../Modal';
 import { Picker } from './Picker';
@@ -44,7 +47,10 @@ function BorrowForm({
   const [book, setBook] = useState<Book | null>(initialBook ?? null);
   const lend = useMutation({
     mutationFn: ({ bookId, memberId }: { bookId: number; memberId: number }) => borrowBook(bookId, memberId),
-    onSuccess: () => {
+    onSuccess: (loan) => {
+      toast.success(`“${loan.bookTitle}” lent to ${loan.memberName}`, {
+        description: `Due back ${formatDate(loan.dueDate)}`,
+      });
       void queryClient.invalidateQueries({ queryKey: queryKeys.loans });
       void queryClient.invalidateQueries({ queryKey: queryKeys.books });
       onDone();
@@ -104,6 +110,7 @@ function BorrowForm({
           Cancel
         </button>
         <button type="submit" className="btn btn-primary" disabled={!member || !book || lend.isPending}>
+          <BookUp />
           {lend.isPending ? 'Lending…' : 'Lend book'}
         </button>
       </div>

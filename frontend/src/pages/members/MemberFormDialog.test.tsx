@@ -69,6 +69,7 @@ describe('MemberFormDialog', () => {
       phone: null,
     });
     expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(await screen.findByText('Ada Lovelace added as M0007')).toBeInTheDocument();
   });
 
   it('marks the email when another member already uses it', async () => {

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { BookUp, ChevronLeft, Pencil, UserX } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
+import { toast } from 'sonner';
 import { deactivateMember, getMember } from '../../api/members';
 import { queryKeys } from '../../api/queryKeys';
 import { Badge } from '../../components/Badge';
@@ -22,6 +24,7 @@ export function MemberDetailPage() {
   const deactivate = useMutation({
     mutationFn: () => deactivateMember(id),
     onSuccess: (member) => {
+      toast.success(`${member.fullName} deactivated`);
       queryClient.setQueryData(queryKeys.member(id), member);
       void queryClient.invalidateQueries({ queryKey: queryKeys.memberSearches });
       setDeactivating(false);
@@ -30,9 +33,9 @@ export function MemberDetailPage() {
 
   return (
     <section>
-      <p>
-        <Link to="/members">← All members</Link>
-      </p>
+      <Link to="/members" className="back-link">
+        <ChevronLeft size={16} /> All members
+      </Link>
       <QueryState
         query={query}
         notFound={
@@ -42,17 +45,28 @@ export function MemberDetailPage() {
         {(member) => (
           <>
             <div className="page-header">
-              <h1>
-                {member.fullName}{' '}
-                {member.active ? <Badge tone="success">Active</Badge> : <Badge tone="muted">Inactive</Badge>}
-              </h1>
+              <div>
+                <h1>
+                  {member.fullName}{' '}
+                  {member.active ? (
+                    <Badge tone="success">Active</Badge>
+                  ) : (
+                    <Badge tone="muted">Inactive</Badge>
+                  )}
+                </h1>
+                <p className="page-subtitle">
+                  {member.memberCode} · member since {formatDateTime(member.joinedAt)}
+                </p>
+              </div>
               <div className="header-actions">
                 {member.active && (
                   <button type="button" className="btn btn-primary" onClick={() => setLending(true)}>
+                    <BookUp />
                     Lend a book
                   </button>
                 )}
                 <button type="button" className="btn" onClick={() => setEditing(true)}>
+                  <Pencil />
                   Edit
                 </button>
                 {member.active && (
@@ -64,20 +78,29 @@ export function MemberDetailPage() {
                       setDeactivating(true);
                     }}
                   >
+                    <UserX />
                     Deactivate
                   </button>
                 )}
               </div>
             </div>
-            <dl className="details">
-              <dt>Member code</dt>
-              <dd>{member.memberCode}</dd>
-              <dt>Email</dt>
-              <dd>{member.email}</dd>
-              <dt>Phone</dt>
-              <dd>{member.phone ?? '—'}</dd>
-              <dt>Joined</dt>
-              <dd>{formatDateTime(member.joinedAt)}</dd>
+            <dl className="details card">
+              <div>
+                <dt>Member code</dt>
+                <dd>{member.memberCode}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>{member.email}</dd>
+              </div>
+              <div>
+                <dt>Phone</dt>
+                <dd>{member.phone ?? '—'}</dd>
+              </div>
+              <div>
+                <dt>Joined</dt>
+                <dd>{formatDateTime(member.joinedAt)}</dd>
+              </div>
             </dl>
             <MemberLoans memberId={member.id} />
             <MemberFormDialog open={editing} onOpenChange={setEditing} member={member} />

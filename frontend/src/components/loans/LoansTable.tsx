@@ -1,3 +1,4 @@
+import { Undo2 } from 'lucide-react';
 import { Link } from 'react-router';
 import { errorMessage } from '../../api/errors';
 import type { Loan } from '../../types';
@@ -56,11 +57,12 @@ export function LoansTable({ caption, loans, hide }: LoansTableProps) {
         loan.status === 'RETURNED' ? null : (
           <button
             type="button"
-            className="btn"
+            className="btn btn-sm"
             aria-label={`Return ${loan.bookTitle} from ${loan.memberName}`}
             disabled={giveBack.isPending && giveBack.variables === loan.id}
             onClick={() => giveBack.mutate(loan.id)}
           >
+            <Undo2 />
             {giveBack.isPending && giveBack.variables === loan.id ? 'Returning…' : 'Return'}
           </button>
         ),

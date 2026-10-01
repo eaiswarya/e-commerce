@@ -1,4 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { Plus, SearchX, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { searchMembers, type MemberSearch } from '../../api/members';
@@ -48,8 +49,12 @@ export function MembersPage() {
   return (
     <section>
       <div className="page-header">
-        <h1>Members</h1>
+        <div>
+          <h1>Members</h1>
+          <p className="page-subtitle">Everyone who can borrow, and those who no longer can.</p>
+        </div>
         <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>
+          <Plus />
           Add member
         </button>
       </div>
@@ -61,12 +66,13 @@ export function MembersPage() {
           onSearch={(q) => update({ q })}
         />
         <label>
-          Status{' '}
+          <span className="visually-hidden">Status</span>
           <select
+            className="select"
             value={status}
             onChange={(event) => update({ status: event.target.value === 'all' ? null : event.target.value })}
           >
-            <option value="all">All</option>
+            <option value="all">All members</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
@@ -77,6 +83,7 @@ export function MembersPage() {
         isEmpty={(page) => page.content.length === 0}
         empty={
           <EmptyState
+            icon={filtered ? SearchX : Users}
             message={filtered ? 'No members match your search.' : 'No members yet. Add the first one.'}
           />
         }

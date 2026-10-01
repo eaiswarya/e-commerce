@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import { createBook, getBook, updateBook } from '../../api/books';
 import { ApiError } from '../../api/client';
@@ -107,6 +108,7 @@ function BookForm({
     onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.book(saved.id), saved);
       void queryClient.invalidateQueries({ queryKey: queryKeys.bookSearches });
+      toast.success(book ? 'Changes saved' : `“${saved.title}” added to the catalogue`);
       onSaved(saved);
     },
     onError: (error) => {
@@ -158,22 +160,24 @@ function BookForm({
           Loaded the latest version of this book. Your unsaved changes were replaced; edit and save again.
         </p>
       )}
-      <FormField label="ISBN" error={errors.isbn?.message} {...register('isbn')} />
-      <FormField label="Title" error={errors.title?.message} {...register('title')} />
-      <FormField label="Author" error={errors.author?.message} {...register('author')} />
-      <FormField label="Category" error={errors.category?.message} {...register('category')} />
-      <FormField
-        label="Published year"
-        inputMode="numeric"
-        error={errors.publishedYear?.message}
-        {...register('publishedYear')}
-      />
-      <FormField
-        label="Total copies"
-        inputMode="numeric"
-        error={errors.totalCopies?.message}
-        {...register('totalCopies')}
-      />
+      <div className="form-grid">
+        <FormField label="Title" wide error={errors.title?.message} {...register('title')} />
+        <FormField label="Author" error={errors.author?.message} {...register('author')} />
+        <FormField label="ISBN" error={errors.isbn?.message} {...register('isbn')} />
+        <FormField label="Category" error={errors.category?.message} {...register('category')} />
+        <FormField
+          label="Published year"
+          inputMode="numeric"
+          error={errors.publishedYear?.message}
+          {...register('publishedYear')}
+        />
+        <FormField
+          label="Total copies"
+          inputMode="numeric"
+          error={errors.totalCopies?.message}
+          {...register('totalCopies')}
+        />
+      </div>
       <div className="actions">
         <button type="button" className="btn" onClick={onCancel}>
           Cancel

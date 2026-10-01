@@ -72,6 +72,20 @@ describe('BooksPage', () => {
     expect(screen.getByText('Book detail')).toBeInTheDocument();
   });
 
+  it('flags books that cannot be lent right now', async () => {
+    vi.mocked(searchBooks).mockResolvedValue(
+      page([
+        { ...DUNE, id: 2, title: 'All Out', availableCopies: 0, totalCopies: 2 },
+        { ...DUNE, id: 3, title: 'Withdrawn One', availableCopies: 0, totalCopies: 0 },
+      ]),
+    );
+    renderPage();
+
+    const table = await screen.findByRole('table', { name: 'Books' });
+    expect(within(table).getByText('All out')).toBeInTheDocument();
+    expect(within(table).getByText('Withdrawn')).toBeInTheDocument();
+  });
+
   it('invites adding the first book when the catalogue is empty', async () => {
     vi.mocked(searchBooks).mockResolvedValue(page([]));
     renderPage();

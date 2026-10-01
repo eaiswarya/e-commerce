@@ -1,8 +1,10 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { BookOpen, Plus, SearchX } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { searchBooks, type BookSearch } from '../../api/books';
 import { queryKeys } from '../../api/queryKeys';
+import { Badge } from '../../components/Badge';
 import { DataTable, type Column } from '../../components/DataTable';
 import { EmptyState } from '../../components/EmptyState';
 import { Pagination } from '../../components/Pagination';
@@ -17,7 +19,7 @@ const columns: Column<Book>[] = [
   { header: 'Author', cell: (book) => book.author },
   { header: 'ISBN', cell: (book) => book.isbn },
   { header: 'Category', cell: (book) => book.category ?? '—' },
-  { header: 'Available', cell: (book) => `${book.availableCopies} of ${book.totalCopies}` },
+  { header: 'Available', cell: (book) => <Availability book={book} /> },
 ];
 
 export function BooksPage() {
@@ -40,8 +42,12 @@ export function BooksPage() {
   return (
     <section>
       <div className="page-header">
-        <h1>Books</h1>
+        <div>
+          <h1>Books</h1>
+          <p className="page-subtitle">The catalogue, with live copy counts.</p>
+        </div>
         <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>
+          <Plus />
           Add book
         </button>
       </div>
@@ -57,12 +63,12 @@ export function BooksPage() {
           value={search.category ?? ''}
           onSearch={(category) => update({ category })}
         />
-        <label>
+        <label className="chip">
           <input
             type="checkbox"
             checked={search.available}
             onChange={(event) => update({ available: event.target.checked ? 'true' : null })}
-          />{' '}
+          />
           Available only
         </label>
       </div>
@@ -71,6 +77,7 @@ export function BooksPage() {
         isEmpty={(page) => page.content.length === 0}
         empty={
           <EmptyState
+            icon={filtered ? SearchX : BookOpen}
             message={filtered ? 'No books match your search.' : 'No books yet. Add the first one.'}
           />
         }
@@ -85,4 +92,15 @@ export function BooksPage() {
       <BookFormDialog open={adding} onOpenChange={setAdding} />
     </section>
   );
+}
+
+/** Free copies, or a badge when none can be lent: all out on loan, or withdrawn (no copies at all). */
+function Availability({ book }: { book: Book }) {
+  if (book.totalCopies === 0) {
+    return <Badge tone="muted">Withdrawn</Badge>;
+  }
+  if (book.availableCopies === 0) {
+    return <Badge tone="danger">All out</Badge>;
+  }
+  return <>{`${book.availableCopies} of ${book.totalCopies}`}</>;
 }
