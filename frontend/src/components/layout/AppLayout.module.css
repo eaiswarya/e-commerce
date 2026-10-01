@@ -17,6 +17,29 @@
   font-size: 1.125rem;
 }
 
+.nav {
+  display: flex;
+  gap: 0.25rem;
+  margin-right: auto;
+}
+
+.link {
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--color-bg);
+}
+
+.link[aria-current='page'] {
+  background: var(--color-bg);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .account {
   display: flex;
   align-items: center;

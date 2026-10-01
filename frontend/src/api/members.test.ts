@@ -32,7 +32,10 @@ describe('members api', () => {
 
     expect(apiFetch).toHaveBeenNthCalledWith(1, '/api/members/7', { signal: undefined });
     expect(apiFetch).toHaveBeenNthCalledWith(2, '/api/members', { method: 'POST', body: input });
-    expect(apiFetch).toHaveBeenNthCalledWith(3, '/api/members/7', { method: 'PUT', body: { ...input, version: 2 } });
+    expect(apiFetch).toHaveBeenNthCalledWith(3, '/api/members/7', {
+      method: 'PUT',
+      body: { ...input, version: 2 },
+    });
     expect(apiFetch).toHaveBeenNthCalledWith(4, '/api/members/7/deactivate', { method: 'PATCH' });
   });
 });

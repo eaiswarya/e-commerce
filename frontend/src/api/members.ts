@@ -9,7 +9,9 @@ export interface MemberSearch {
 }
 
 export function searchMembers({ q, active, page }: MemberSearch, signal?: AbortSignal) {
-  return apiFetch<PageResponse<Member>>(`/api/members${toQuery({ q, active, page: page || undefined })}`, { signal });
+  return apiFetch<PageResponse<Member>>(`/api/members${toQuery({ q, active, page: page || undefined })}`, {
+    signal,
+  });
 }
 
 export function getMember(id: number, signal?: AbortSignal) {

@@ -25,9 +25,13 @@ describe('books api', () => {
     await searchBooks({ q: 'java', category: 'Programming', available: true, page: 2 });
     await searchBooks({ q: '', available: false, page: 0 });
 
-    expect(apiFetch).toHaveBeenNthCalledWith(1, '/api/books?q=java&category=Programming&available=true&page=2', {
-      signal: undefined,
-    });
+    expect(apiFetch).toHaveBeenNthCalledWith(
+      1,
+      '/api/books?q=java&category=Programming&available=true&page=2',
+      {
+        signal: undefined,
+      },
+    );
     expect(apiFetch).toHaveBeenNthCalledWith(2, '/api/books', { signal: undefined });
   });
 
@@ -43,7 +47,10 @@ describe('books api', () => {
     await deleteBook(7);
 
     expect(apiFetch).toHaveBeenNthCalledWith(1, '/api/books', { method: 'POST', body: input });
-    expect(apiFetch).toHaveBeenNthCalledWith(2, '/api/books/7', { method: 'PUT', body: { ...input, version: 3 } });
+    expect(apiFetch).toHaveBeenNthCalledWith(2, '/api/books/7', {
+      method: 'PUT',
+      body: { ...input, version: 3 },
+    });
     expect(apiFetch).toHaveBeenNthCalledWith(3, '/api/books/7', { method: 'DELETE' });
   });
 });
