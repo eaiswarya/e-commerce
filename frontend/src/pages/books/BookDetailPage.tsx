@@ -19,7 +19,7 @@ export function BookDetailPage() {
     mutationFn: () => deleteBook(id),
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: queryKeys.book(id) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.books });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bookSearches });
       navigate('/books', { replace: true });
     },
   });

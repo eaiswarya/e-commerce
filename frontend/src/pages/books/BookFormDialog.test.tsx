@@ -114,6 +114,19 @@ describe('BookFormDialog', () => {
     expect(await screen.findByText('must not be blank')).toBeInTheDocument();
   });
 
+  it('marks the ISBN when another book already has it', async () => {
+    vi.mocked(updateBook).mockRejectedValue(
+      new ApiError(409, 'DUPLICATE', 'A book with ISBN 9780134685991 already exists'),
+    );
+    renderDialog(BOOK);
+
+    await save();
+
+    expect(await screen.findByLabelText('ISBN')).toHaveAccessibleDescription(
+      'A book with this ISBN already exists',
+    );
+  });
+
   it('explains a rule the API enforces, such as copies on loan', async () => {
     vi.mocked(updateBook).mockRejectedValue(
       new ApiError(409, 'COPIES_ON_LOAN', 'Cannot set total copies to 0'),

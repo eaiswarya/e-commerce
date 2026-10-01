@@ -106,15 +106,17 @@ function BookForm({
     mutationFn: (input: BookInput) => (book ? updateBook(book.id, { ...input, version }) : createBook(input)),
     onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.book(saved.id), saved);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.books });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bookSearches });
       onSaved(saved);
     },
     onError: (error) => {
-      if (error instanceof ApiError) {
-        Object.entries(error.fieldErrors).forEach(([field, message]) =>
-          setError(field as FormFields, { message }),
-        );
+      if (!(error instanceof ApiError)) return;
+      if (error.code === 'DUPLICATE') {
+        setError('isbn', { message: 'A book with this ISBN already exists' });
       }
+      Object.entries(error.fieldErrors).forEach(([field, message]) =>
+        setError(field as FormFields, { message }),
+      );
     },
   });
 
