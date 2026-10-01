@@ -8,7 +8,12 @@ import { QueryState } from './QueryState';
 function Harness({ load }: { load: () => Promise<string[]> }) {
   const query = useQuery({ queryKey: ['items'], queryFn: load });
   return (
-    <QueryState query={query} isEmpty={(items) => items.length === 0} empty={<p>No items</p>}>
+    <QueryState
+      query={query}
+      isEmpty={(items) => items.length === 0}
+      empty={<p>No items</p>}
+      notFound={<p>Gone</p>}
+    >
       {(items) => <p>Items: {items.join(', ')}</p>}
     </QueryState>
   );
@@ -53,5 +58,12 @@ describe('QueryState', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     expect(await screen.findByText('Items: back')).toBeInTheDocument();
+  });
+
+  it('shows the not-found content for a 404', async () => {
+    renderHarness(() => Promise.reject(new ApiError(404, 'NOT_FOUND', 'Book 7 not found')));
+
+    expect(await screen.findByText('Gone')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
