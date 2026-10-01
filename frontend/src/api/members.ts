@@ -6,12 +6,16 @@ export interface MemberSearch {
   /** {@code true}: active only, {@code false}: inactive only, omitted: everyone. */
   active?: boolean;
   page?: number;
+  size?: number;
 }
 
-export function searchMembers({ q, active, page }: MemberSearch, signal?: AbortSignal) {
-  return apiFetch<PageResponse<Member>>(`/api/members${toQuery({ q, active, page: page || undefined })}`, {
-    signal,
-  });
+export function searchMembers({ q, active, page, size }: MemberSearch, signal?: AbortSignal) {
+  return apiFetch<PageResponse<Member>>(
+    `/api/members${toQuery({ q, active, page: page || undefined, size })}`,
+    {
+      signal,
+    },
+  );
 }
 
 export function getMember(id: number, signal?: AbortSignal) {

@@ -5,8 +5,10 @@ import { deleteBook, getBook } from '../../api/books';
 import { queryKeys } from '../../api/queryKeys';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
+import { BorrowDialog } from '../../components/loans/BorrowDialog';
 import { QueryState } from '../../components/QueryState';
 import { BookFormDialog } from './BookFormDialog';
+import { BookLoans } from './BookLoans';
 
 export function BookDetailPage() {
   const id = Number(useParams().id);
@@ -14,6 +16,7 @@ export function BookDetailPage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [lending, setLending] = useState(false);
   const query = useQuery({ queryKey: queryKeys.book(id), queryFn: ({ signal }) => getBook(id, signal) });
   const remove = useMutation({
     mutationFn: () => deleteBook(id),
@@ -43,6 +46,11 @@ export function BookDetailPage() {
             <div className="page-header">
               <h1>{book.title}</h1>
               <div className="header-actions">
+                {book.availableCopies > 0 && (
+                  <button type="button" className="btn btn-primary" onClick={() => setLending(true)}>
+                    Lend this book
+                  </button>
+                )}
                 <button type="button" className="btn" onClick={() => setEditing(true)}>
                   Edit
                 </button>
@@ -72,7 +80,9 @@ export function BookDetailPage() {
                 {book.availableCopies} of {book.totalCopies}
               </dd>
             </dl>
+            <BookLoans bookId={book.id} />
             <BookFormDialog open={editing} onOpenChange={setEditing} book={book} />
+            <BorrowDialog open={lending} onOpenChange={setLending} book={book} />
             <ConfirmDialog
               open={deleting}
               onOpenChange={setDeleting}

@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Route, Routes } from 'react-router';
 import { deleteBook, getBook } from '../../api/books';
+import { searchLoans } from '../../api/loans';
+import { LOAN, pageOf } from '../../test/fixtures';
 import { ApiError } from '../../api/client';
 import { renderWithProviders } from '../../test/render';
 import type { Book } from '../../types';
@@ -14,6 +16,9 @@ vi.mock('../../api/books', () => ({
   updateBook: vi.fn(),
   createBook: vi.fn(),
 }));
+
+vi.mock('../../api/loans', () => ({ searchLoans: vi.fn(), returnLoan: vi.fn(), borrowBook: vi.fn() }));
+vi.mock('../../api/members', () => ({ searchMembers: vi.fn().mockResolvedValue({ content: [] }) }));
 
 const BOOK: Book = {
   id: 7,
@@ -40,6 +45,7 @@ function renderPage() {
 beforeEach(() => {
   vi.mocked(getBook).mockReset();
   vi.mocked(deleteBook).mockReset();
+  vi.mocked(searchLoans).mockReset().mockResolvedValue(pageOf([]));
 });
 
 describe('BookDetailPage', () => {
@@ -98,5 +104,39 @@ describe('BookDetailPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Set its total copies to 0 to withdraw it.');
     expect(screen.getByRole('dialog', { name: 'Delete book?' })).toBeInTheDocument();
+  });
+
+  it('shows who has a copy now', async () => {
+    vi.mocked(getBook).mockResolvedValue({ ...BOOK, availableCopies: 2 });
+    vi.mocked(searchLoans).mockResolvedValue(pageOf([{ ...LOAN, bookId: 7, status: 'ACTIVE' }]));
+    renderPage();
+
+    const table = await screen.findByRole('table', { name: 'On loan now' });
+    expect(table).toHaveTextContent('Ada Lovelace (M0007)');
+    expect(searchLoans).toHaveBeenCalledWith({ bookId: 7, status: 'active', page: 0 }, expect.anything());
+  });
+
+  it('says when no copies are out', async () => {
+    vi.mocked(getBook).mockResolvedValue(BOOK);
+    renderPage();
+
+    expect(await screen.findByText('No copies are on loan.')).toBeInTheDocument();
+  });
+
+  it('lends this book from its page', async () => {
+    vi.mocked(getBook).mockResolvedValue(BOOK);
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Lend this book' }));
+
+    expect(screen.getByRole('dialog', { name: 'Lend a book' })).toHaveTextContent('Book: Effective Java');
+  });
+
+  it('does not offer lending when every copy is out', async () => {
+    vi.mocked(getBook).mockResolvedValue({ ...BOOK, availableCopies: 0 });
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Effective Java' });
+    expect(screen.queryByRole('button', { name: 'Lend this book' })).not.toBeInTheDocument();
   });
 });

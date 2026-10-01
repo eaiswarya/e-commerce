@@ -1,0 +1,43 @@
+.picker {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.legend {
+  padding: 0 0.25rem;
+  font-weight: 600;
+}
+
+.options {
+  max-height: 12rem;
+  overflow-y: auto;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.375rem 0.25rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.option:hover {
+  background: var(--color-bg);
+}
+
+.hint {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+.empty {
+  margin: 0.75rem 0 0;
+  color: var(--color-muted);
+}

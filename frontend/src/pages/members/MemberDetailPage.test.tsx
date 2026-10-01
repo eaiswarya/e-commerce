@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Route, Routes } from 'react-router';
 import { ApiError } from '../../api/client';
+import { memberLoans } from '../../api/loans';
 import { deactivateMember, getMember } from '../../api/members';
+import { LOAN, pageOf } from '../../test/fixtures';
 import { renderWithProviders } from '../../test/render';
 import type { Member } from '../../types';
 import { MemberDetailPage } from './MemberDetailPage';
@@ -14,6 +16,9 @@ vi.mock('../../api/members', () => ({
   updateMember: vi.fn(),
   createMember: vi.fn(),
 }));
+
+vi.mock('../../api/loans', () => ({ memberLoans: vi.fn(), returnLoan: vi.fn(), borrowBook: vi.fn() }));
+vi.mock('../../api/books', () => ({ searchBooks: vi.fn().mockResolvedValue({ content: [] }) }));
 
 const ADA: Member = {
   id: 7,
@@ -38,6 +43,7 @@ function renderPage() {
 beforeEach(() => {
   vi.mocked(getMember).mockReset();
   vi.mocked(deactivateMember).mockReset();
+  vi.mocked(memberLoans).mockReset().mockResolvedValue(pageOf([]));
 });
 
 describe('MemberDetailPage', () => {
@@ -91,5 +97,52 @@ describe('MemberDetailPage', () => {
 
     expect(screen.getByRole('dialog', { name: 'Edit member' })).toBeInTheDocument();
     expect(screen.getByLabelText('Email')).toHaveValue('ada@example.com');
+  });
+
+  it('shows what the member has now and what they returned', async () => {
+    vi.mocked(getMember).mockResolvedValue(ADA);
+    vi.mocked(memberLoans).mockImplementation((_id, { status }) =>
+      Promise.resolve(
+        status === 'active'
+          ? pageOf([{ ...LOAN, status: 'ACTIVE' }])
+          : pageOf([
+              { ...LOAN, id: 12, bookTitle: 'Emma', status: 'RETURNED', returnedAt: '2026-09-20T12:00:00Z' },
+            ]),
+      ),
+    );
+    renderPage();
+
+    expect(await screen.findByRole('table', { name: 'On loan' })).toHaveTextContent('Dune');
+    expect(screen.getByRole('table', { name: 'History' })).toHaveTextContent('Emma');
+    expect(screen.queryByRole('columnheader', { name: 'Member' })).not.toBeInTheDocument();
+    expect(memberLoans).toHaveBeenCalledWith(7, { status: 'active', page: 0 }, expect.anything());
+    expect(memberLoans).toHaveBeenCalledWith(7, { status: 'returned', page: 0 }, expect.anything());
+  });
+
+  it('says when the member has nothing out and no history', async () => {
+    vi.mocked(getMember).mockResolvedValue(ADA);
+    renderPage();
+
+    expect(await screen.findByText('Nothing on loan.')).toBeInTheDocument();
+    expect(screen.getByText('No returned books yet.')).toBeInTheDocument();
+  });
+
+  it('lends a book to an active member from their page', async () => {
+    vi.mocked(getMember).mockResolvedValue(ADA);
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Lend a book' }));
+
+    expect(screen.getByRole('dialog', { name: 'Lend a book' })).toHaveTextContent(
+      'Member: Ada Lovelace (M0007)',
+    );
+  });
+
+  it('does not offer lending to an inactive member', async () => {
+    vi.mocked(getMember).mockResolvedValue({ ...ADA, active: false });
+    renderPage();
+
+    await screen.findByRole('heading', { name: /Ada Lovelace/ });
+    expect(screen.queryByRole('button', { name: 'Lend a book' })).not.toBeInTheDocument();
   });
 });

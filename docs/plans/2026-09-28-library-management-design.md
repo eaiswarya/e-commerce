@@ -170,6 +170,9 @@ src/
 - Edit forms send the `version` they loaded. On 409 `CONCURRENT_UPDATE` the form offers "Reload latest", which loads the current record and its new `version` into the form (the user's unsaved edits are replaced, and the form says so).
 - After a write, the detail cache is updated from the response and only list searches are refetched.
 - Dialogs use Radix Dialog (focus trap, Esc, labelled by title); forms use react-hook-form + zod schemas that mirror the API's validation.
+- Dashboard totals come from the existing list endpoints with `size=1` (`totalElements`); no separate stats endpoint. Each total loads and fails on its own.
+- Lending: one dialog with an active-member picker and an available-book picker; opened from a member or book page it starts with that one chosen. Return is a single click wherever an unreturned loan is listed; a borrow or return refreshes every loan list and the book counts.
+- Due dates (`YYYY-MM-DD`) are formatted from their parts so they show the same day in every time zone.
 
 ## Testing
 

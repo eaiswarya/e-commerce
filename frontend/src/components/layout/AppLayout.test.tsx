@@ -24,7 +24,7 @@ describe('AppLayout', () => {
     );
 
     const nav = screen.getByRole('navigation', { name: 'Main' });
-    expect(nav).toHaveTextContent('DashboardBooksMembers');
+    expect(nav).toHaveTextContent('DashboardBooksMembersLoans');
     expect(screen.getByRole('link', { name: 'Books' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current');
     expect(screen.getByText('Administrator')).toBeInTheDocument();

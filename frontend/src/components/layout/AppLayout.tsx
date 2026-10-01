@@ -20,6 +20,9 @@ export function AppLayout() {
           <NavLink to="/members" className={styles.link}>
             Members
           </NavLink>
+          <NavLink to="/loans" className={styles.link}>
+            Loans
+          </NavLink>
         </nav>
         <div className={styles.account}>
           <span>{user?.fullName}</span>
